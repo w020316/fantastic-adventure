@@ -1,7 +1,6 @@
 import { pool } from '../../config/database'
-import { RowDataPacket } from 'mysql2'
 
-interface CommentRow extends RowDataPacket {
+interface CommentRow {
   id: number
   article_id: number
   nickname: string
@@ -13,10 +12,11 @@ interface CommentRow extends RowDataPacket {
 }
 
 export async function listByArticle(articleId: number) {
-  const [rows] = await pool.execute<CommentRow[]>(
-    "SELECT * FROM comments WHERE article_id = ? AND status = 'approved' ORDER BY created_at ASC",
+  const result = await pool.query(
+    "SELECT * FROM comments WHERE article_id = $1 AND status = 'approved' ORDER BY created_at ASC",
     [articleId]
   )
+  const rows = result.rows as CommentRow[]
   const commentMap = new Map<number, any>()
   const roots: any[] = []
   rows.forEach(row => {
@@ -44,33 +44,34 @@ export async function listAll(query: { page?: number; limit?: number; status?: s
   let whereClause = 'WHERE 1=1'
   const params: any[] = []
   if (query.status) {
-    whereClause += ' AND status = ?'
+    whereClause += ' AND status = $' + (params.length + 1)
     params.push(query.status)
   }
   if (query.article_id) {
-    whereClause += ' AND article_id = ?'
+    whereClause += ' AND article_id = $' + (params.length + 1)
     params.push(query.article_id)
   }
-  const [countRows] = await pool.execute<RowDataPacket[]>(`SELECT COUNT(*) as total FROM comments ${whereClause}`, params)
-  const [rows] = await pool.execute<CommentRow[]>(`SELECT * FROM comments ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`, [...params, limit, offset])
-  return { list: rows, total: countRows[0].total, page, limit }
+  const countResult = await pool.query(`SELECT COUNT(*) as total FROM comments ${whereClause}`, params)
+  const total = (countResult.rows[0] as any).total
+  const result = await pool.query(`SELECT * FROM comments ${whereClause} ORDER BY created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`, [...params, limit, offset])
+  return { list: result.rows as CommentRow[], total, page, limit }
 }
 
 export async function create(articleId: number, data: { nickname: string; email?: string; content: string; parent_id?: number }) {
-  const [result] = await pool.execute(
-    'INSERT INTO comments (article_id, nickname, email, content, parent_id) VALUES (?, ?, ?, ?, ?)',
+  const result = await pool.query(
+    'INSERT INTO comments (article_id, nickname, email, content, parent_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
     [articleId, data.nickname, data.email || null, data.content, data.parent_id || null]
   )
-  return { id: (result as any).insertId }
+  return { id: (result.rows[0] as any).id }
 }
 
 export async function updateStatus(id: number, status: string) {
-  await pool.execute('UPDATE comments SET status = ? WHERE id = ?', [status, id])
+  await pool.query('UPDATE comments SET status = $1 WHERE id = $2', [status, id])
   return true
 }
 
 export async function remove(id: number) {
-  await pool.execute('DELETE FROM comments WHERE parent_id = ?', [id])
-  await pool.execute('DELETE FROM comments WHERE id = ?', [id])
+  await pool.query('DELETE FROM comments WHERE parent_id = $1', [id])
+  await pool.query('DELETE FROM comments WHERE id = $1', [id])
   return true
 }

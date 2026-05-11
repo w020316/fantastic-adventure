@@ -2,9 +2,8 @@ import bcrypt from 'bcryptjs'
 import jwt, { type SignOptions } from 'jsonwebtoken'
 import { pool } from '../../config/database'
 import { config } from '../../config'
-import { RowDataPacket, ResultSetHeader } from 'mysql2'
 
-interface UserRow extends RowDataPacket {
+interface UserRow {
   id: number
   username: string
   password: string
@@ -16,10 +15,11 @@ interface UserRow extends RowDataPacket {
 }
 
 export async function login(username: string, password: string) {
-  const [rows] = await pool.execute<UserRow[]>(
-    'SELECT * FROM users WHERE username = ?',
+  const result = await pool.query(
+    'SELECT * FROM users WHERE username = $1',
     [username]
   )
+  const rows = result.rows as UserRow[]
   if (rows.length === 0) {
     throw new Error('用户名或密码错误')
   }
@@ -36,10 +36,11 @@ export async function login(username: string, password: string) {
 }
 
 export async function getProfile(userId: number) {
-  const [rows] = await pool.execute<UserRow[]>(
-    'SELECT id, username, email, avatar, role, created_at, updated_at FROM users WHERE id = ?',
+  const result = await pool.query(
+    'SELECT id, username, email, avatar, role, created_at, updated_at FROM users WHERE id = $1',
     [userId]
   )
+  const rows = result.rows as UserRow[]
   if (rows.length === 0) {
     throw new Error('用户不存在')
   }
@@ -58,10 +59,11 @@ export async function refreshToken(token: string) {
 }
 
 export async function updatePassword(userId: number, oldPassword: string, newPassword: string) {
-  const [rows] = await pool.execute<UserRow[]>(
-    'SELECT password FROM users WHERE id = ?',
+  const result = await pool.query(
+    'SELECT password FROM users WHERE id = $1',
     [userId]
   )
+  const rows = result.rows as UserRow[]
   if (rows.length === 0) {
     throw new Error('用户不存在')
   }
@@ -70,11 +72,11 @@ export async function updatePassword(userId: number, oldPassword: string, newPas
     throw new Error('原密码错误')
   }
   const hashedPassword = await bcrypt.hash(newPassword, 10)
-  await pool.execute('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId])
+  await pool.query('UPDATE users SET password = $1 WHERE id = $2', [hashedPassword, userId])
   return true
 }
 
 export async function updateAvatar(userId: number, avatarUrl: string) {
-  await pool.execute('UPDATE users SET avatar = ? WHERE id = ?', [avatarUrl, userId])
+  await pool.query('UPDATE users SET avatar = $1 WHERE id = $2', [avatarUrl, userId])
   return true
 }
