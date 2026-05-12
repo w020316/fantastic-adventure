@@ -129,3 +129,19 @@ export async function like(id: number, ip: string) {
   await pool.query('UPDATE articles SET like_count = like_count + 1 WHERE id = $1', [id])
   return true
 }
+
+export async function related(id: number, limit: number = 3) {
+  const articleResult = await pool.query('SELECT category_id FROM articles WHERE id = $1', [id])
+  if (articleResult.rows.length === 0) return []
+  const categoryId = (articleResult.rows[0] as any).category_id
+  let sql = "SELECT id, title, summary, cover_image, view_count, created_at FROM articles WHERE id != $1 AND status = 'published'"
+  const params: any[] = [id]
+  if (categoryId) {
+    sql += ' AND category_id = $2'
+    params.push(categoryId)
+  }
+  sql += ` ORDER BY created_at DESC LIMIT $${params.length + 1}`
+  params.push(limit)
+  const result = await pool.query(sql, params)
+  return result.rows
+}

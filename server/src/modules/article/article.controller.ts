@@ -60,3 +60,14 @@ export async function like(req: Request, res: Response) {
     res.status(400).json({ code: 400, message: err.message })
   }
 }
+
+export async function related(req: Request, res: Response) {
+  try {
+    const id = parseInt(req.params.id)
+    const limit = parseInt(req.query.limit as string) || 3
+    const data = await articleService.related(id, limit)
+    res.json({ code: 200, message: 'ok', data })
+  } catch (err: any) {
+    res.status(500).json({ code: 500, message: err.message })
+  }
+}

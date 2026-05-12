@@ -15,9 +15,16 @@
 
     <section class="max-w-7xl mx-auto px-6 py-20">
       <h2 class="text-3xl font-bold mb-10 gradient-text">最新文章</h2>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-if="loading" class="flex justify-center py-10">
+        <div class="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+      </div>
+      <div v-else-if="!articles.length" class="text-center py-10 text-slate-500">暂无文章</div>
+      <div v-else class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         <router-link v-for="article in articles" :key="article.id" :to="`/article/${article.id}`" class="glass rounded-xl overflow-hidden hover:scale-[1.02] transition-transform duration-300 glow-border">
-          <div v-if="article.cover_image" class="h-48 bg-dark-200"><img :src="article.cover_image" class="w-full h-full object-cover" /></div>
+          <div v-if="article.cover_image" class="h-48 bg-dark-200"><img :src="article.cover_image" class="w-full h-full object-cover" loading="lazy" /></div>
+          <div v-else class="h-48 bg-gradient-to-br from-accent/20 to-cyan/20 flex items-center justify-center">
+            <span class="text-4xl gradient-text font-bold">{{ article.title?.[0] }}</span>
+          </div>
           <div class="p-6">
             <h3 class="text-lg font-semibold mb-2 line-clamp-2">{{ article.title }}</h3>
             <p class="text-slate-400 text-sm mb-4 line-clamp-2">{{ article.summary }}</p>
@@ -32,7 +39,8 @@
 
     <section class="max-w-7xl mx-auto px-6 py-20">
       <h2 class="text-3xl font-bold mb-10 gradient-text">精选项目</h2>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div v-if="!projects.length" class="text-center py-10 text-slate-500">暂无项目</div>
+      <div v-else class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         <div v-for="project in projects" :key="project.id" class="glass rounded-xl p-6 hover:scale-[1.02] transition-transform duration-300 glow-border">
           <h3 class="text-lg font-semibold mb-2">{{ project.title }}</h3>
           <p class="text-slate-400 text-sm mb-4">{{ project.description }}</p>
@@ -54,9 +62,13 @@ import { ref, onMounted } from 'vue'
 import { getArticles } from '../api/article'
 import { getProjects } from '../api/project'
 import { recordVisit } from '../api/stats'
+import { useSeo } from '../composables/useSeo'
+
+useSeo({ title: 'MyBlog - 技术创造价值', description: '分享技术思考，记录成长轨迹' })
 
 const articles = ref<any[]>([])
 const projects = ref<any[]>([])
+const loading = ref(true)
 
 onMounted(async () => {
   recordVisit({ path: '/' })
@@ -67,6 +79,8 @@ onMounted(async () => {
     ])
     articles.value = articleRes.data?.list || []
     projects.value = (projectRes.data || []).slice(0, 3)
-  } catch {}
+  } catch {} finally {
+    loading.value = false
+  }
 })
 </script>

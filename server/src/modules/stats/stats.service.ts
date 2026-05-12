@@ -25,8 +25,7 @@ export async function overview() {
 
 export async function trend(days: number = 30) {
   const result = await pool.query(
-    `SELECT DATE(created_at) as date, COUNT(*) as visits FROM stats WHERE created_at >= CURRENT_DATE - INTERVAL '$1 days' GROUP BY DATE(created_at) ORDER BY date ASC`,
-    [days]
+    `SELECT DATE(created_at) as date, COUNT(*) as visits FROM stats WHERE created_at >= CURRENT_DATE - INTERVAL '${days} days' GROUP BY DATE(created_at) ORDER BY date ASC`
   )
   const rows = result.rows as any[]
   return rows.map(row => ({ date: row.date, visits: row.visits }))
