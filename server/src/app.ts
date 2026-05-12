@@ -22,6 +22,7 @@ app.use(cors({
     'http://localhost:5173',
     'http://localhost:5174',
     'https://fantastic-adventure-client.vercel.app',
+    'https://fantastic-adventure-admin.vercel.app',
     'https://xiaowuboke.com',
   ],
   credentials: true,
