@@ -89,7 +89,7 @@ CREATE TABLE IF NOT EXISTS stats (
 CREATE INDEX IF NOT EXISTS idx_stats_path ON stats(path);
 CREATE INDEX IF NOT EXISTS idx_stats_created ON stats(created_at);
 
-INSERT INTO users (username, password, email, role) VALUES ('admin', '$2a$10$N9qo8uLOickgx2ZMRZoMy.MrqJ3Y9eYz1z5Vp3z5Yz1z5Vp3z5Yz1z5', 'admin@blog.com', 'admin') ON CONFLICT (username) DO NOTHING;
+INSERT INTO users (username, password, email, role) VALUES ('admin', '$2a$10$ibX5Bq87E6lMhH1eVtufeuUcmWNViLs1MQESor2NpL.nM8RM9O.DW', 'admin@blog.com', 'admin') ON CONFLICT (username) DO NOTHING;
 
 INSERT INTO categories (name, sort_order) VALUES ('前端开发', 1), ('后端开发', 2), ('DevOps', 3), ('随笔', 4) ON CONFLICT (name) DO NOTHING;
 

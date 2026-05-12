@@ -2,9 +2,10 @@ import express from 'express'
 import cors from 'cors'
 import helmet from 'helmet'
 import path from 'path'
+import fs from 'fs'
 import { config } from './config'
+import { pool, testConnection } from './config/database'
 import { errorHandler } from './middleware/errorHandler'
-import { testConnection } from './config/database'
 import authRoutes from './modules/auth/auth.routes'
 import articleRoutes from './modules/article/article.routes'
 import categoryRoutes from './modules/category/category.routes'
@@ -48,10 +49,27 @@ app.use(errorHandler)
 
 const PORT = config.port
 
+async function initDatabase() {
+  try {
+    const result = await pool.query("SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'users')")
+    const exists = result.rows[0].exists
+    if (!exists) {
+      console.log('Database tables not found, running init.sql...')
+      const sqlPath = path.join(process.cwd(), 'sql', 'init.sql')
+      const sql = fs.readFileSync(sqlPath, 'utf-8')
+      await pool.query(sql)
+      console.log('Database initialized successfully!')
+    }
+  } catch (err) {
+    console.error('Database initialization error:', err)
+  }
+}
+
 async function start() {
   try {
     await testConnection()
     console.log('Database connected successfully')
+    await initDatabase()
   } catch (err) {
     console.error('Database connection failed:', err)
   }
