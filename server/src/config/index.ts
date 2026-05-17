@@ -2,12 +2,12 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-function requireEnv(key: string): string {
+function getEnv(key: string, fallback?: string): string {
   const value = process.env[key]
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`)
-  }
-  return value
+  if (value) return value
+  if (fallback !== undefined) return fallback
+  console.warn(`[Config] Warning: environment variable "${key}" is not set, using fallback`)
+  return ''
 }
 
 export const config = {
@@ -21,11 +21,20 @@ export const config = {
     database: process.env.DB_NAME || 'blog_db',
   },
   jwt: {
-    secret: requireEnv('JWT_SECRET'),
-    refreshSecret: requireEnv('JWT_REFRESH_SECRET'),
+    secret: getEnv('JWT_SECRET'),
+    refreshSecret: getEnv('JWT_REFRESH_SECRET'),
     expiresIn: process.env.JWT_EXPIRES_IN || '2h',
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
   uploadDir: process.env.UPLOAD_DIR || 'uploads',
   isDev: process.env.NODE_ENV !== 'production',
+}
+
+export function validateConfig(): void {
+  const errors: string[] = []
+  if (!config.jwt.secret) errors.push('JWT_SECRET')
+  if (!config.jwt.refreshSecret) errors.push('JWT_REFRESH_SECRET')
+  if (errors.length > 0) {
+    throw new Error(`Missing required environment variables: ${errors.join(', ')}. Please set them in render.yaml or .env file.`)
+  }
 }

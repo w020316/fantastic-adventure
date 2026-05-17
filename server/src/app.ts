@@ -3,7 +3,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import path from 'path'
 import fs from 'fs'
-import { config } from './config'
+import { config, validateConfig } from './config'
 import { pool, testConnection } from './config/database'
 import { errorHandler } from './middleware/errorHandler'
 import { requestLogger } from './middleware/requestLogger'
@@ -152,6 +152,7 @@ async function initDatabase(): Promise<void> {
 }
 
 async function start() {
+  validateConfig()
   let dbConnected = false
   try {
     await testConnection()

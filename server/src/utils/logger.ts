@@ -8,7 +8,12 @@ const LOG_LEVELS: Record<LogLevel, number> = { debug: 0, info: 1, warn: 2, error
 const currentLevel: LogLevel = (process.env.LOG_LEVEL as LogLevel) || 'info'
 
 function ensureLogDir() {
-  if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true })
+  try {
+    if (!fs.existsSync(LOG_DIR)) fs.mkdirSync(LOG_DIR, { recursive: true })
+  } catch {
+    return false
+  }
+  return true
 }
 
 function formatMessage(level: LogLevel, message: string, meta?: unknown): string {
@@ -18,7 +23,7 @@ function formatMessage(level: LogLevel, message: string, meta?: unknown): string
 }
 
 function writeToFile(content: string) {
-  ensureLogDir()
+  if (!ensureLogDir()) return
   const date = new Date().toISOString().split('T')[0]
   const filePath = path.join(LOG_DIR, `app-${date}.log`)
   fs.appendFile(filePath, content + '\n', (err) => {
