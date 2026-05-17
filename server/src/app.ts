@@ -54,8 +54,12 @@ app.use(express.json({ limit: '10mb' }))
 app.use(express.urlencoded({ extended: true }))
 
 const uploadDir = path.resolve(process.cwd(), config.uploadDir)
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true })
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true })
+  }
+} catch (err) {
+  console.warn('[Server] Warning: Could not create upload directory:', err instanceof Error ? err.message : String(err))
 }
 app.use('/uploads', express.static(uploadDir))
 

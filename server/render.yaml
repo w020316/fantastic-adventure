@@ -3,7 +3,7 @@ services:
     name: fantastic-adventure-server
     runtime: node
     buildCommand: npm install --include=dev && npm run build
-    startCommand: node -r dotenv/config dist/app.js
+    startCommand: node -r dotenv/config dist/server.js
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
