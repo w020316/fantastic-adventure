@@ -2,6 +2,17 @@
   <div>
     <el-card>
       <el-form :model="form" label-width="80px">
+        <el-form-item label="封面图">
+          <div style="display: flex; align-items: center; gap: 12px">
+            <el-input v-model="form.cover_image" placeholder="封面图URL" style="flex: 1" />
+            <el-upload :show-file-list="false" :action="uploadUrl" :headers="uploadHeaders" :on-success="handleCoverUpload" accept="image/*">
+              <el-button size="small">上传</el-button>
+            </el-upload>
+          </div>
+          <div v-if="form.cover_image" style="margin-top: 8px">
+            <img :src="form.cover_image" style="max-height: 120px; border-radius: 4px" />
+          </div>
+        </el-form-item>
         <el-form-item label="标题"><el-input v-model="form.title" placeholder="文章标题" /></el-form-item>
         <el-form-item label="分类"><el-select v-model="form.category_id" placeholder="选择分类"><el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" /></el-select></el-form-item>
         <el-form-item label="标签"><el-select v-model="form.tag_ids" multiple placeholder="选择标签"><el-option v-for="t in tags" :key="t.id" :label="t.name" :value="t.id" /></el-select></el-form-item>
@@ -35,10 +46,20 @@ const form = reactive({
   title: '',
   content: '',
   summary: '',
+  cover_image: '',
   category_id: undefined as number | undefined,
   tag_ids: [] as number[],
-  status: 'draft' as string,
+  status: 'draft' as 'draft' | 'published',
 })
+
+const uploadUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api') + '/upload'
+const uploadHeaders = computed(() => ({ Authorization: `Bearer ${localStorage.getItem('access_token')}` }))
+
+function handleCoverUpload(response: any) {
+  if (response.code === 200) {
+    form.cover_image = response.data.url
+  }
+}
 
 onMounted(async () => {
   const [catRes, tagRes]: any[] = await Promise.all([getCategories(), getTags()])
@@ -51,6 +72,7 @@ onMounted(async () => {
     form.title = a.title
     form.content = a.content
     form.summary = a.summary || ''
+    form.cover_image = a.cover_image || ''
     form.category_id = a.category_id
     form.tag_ids = a.tags?.map((t: any) => t.id) || []
     form.status = a.status
@@ -60,8 +82,9 @@ onMounted(async () => {
 async function handleSubmit() {
   loading.value = true
   try {
-    if (isEdit.value) { await updateArticle(Number(route.params.id), form) }
-    else { await createArticle(form) }
+    const submitData = { ...form, category_id: form.category_id! }
+    if (isEdit.value) { await updateArticle(Number(route.params.id), submitData) }
+    else { await createArticle(submitData) }
     ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
     router.push('/articles')
   } finally { loading.value = false }

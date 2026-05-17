@@ -1,4 +1,6 @@
 import { pool } from '../../config/database'
+import { logger } from '../../utils/logger'
+import { cache } from '../../utils/cache'
 
 interface CommentRow {
   id: number
@@ -12,6 +14,13 @@ interface CommentRow {
 }
 
 export async function listByArticle(articleId: number) {
+  const cacheKey = `comments:article:${articleId}`
+  const cached = cache.get<any[]>(cacheKey)
+  if (cached) {
+    logger.debug('Comments by article cache hit', { articleId })
+    return cached
+  }
+
   const result = await pool.query(
     "SELECT * FROM comments WHERE article_id = $1 AND status = 'approved' ORDER BY created_at ASC",
     [articleId]
@@ -34,6 +43,8 @@ export async function listByArticle(articleId: number) {
       }
     }
   })
+  cache.set(cacheKey, roots, 30000)
+  logger.info('Comments by article fetched', { articleId, count: roots.length })
   return roots
 }
 
@@ -62,16 +73,30 @@ export async function create(articleId: number, data: { nickname: string; email?
     'INSERT INTO comments (article_id, nickname, email, content, parent_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
     [articleId, data.nickname, data.email || null, data.content, data.parent_id || null]
   )
+  cache.invalidate(`comments:article:${articleId}`)
+  logger.info('Comment created', { articleId, nickname: data.nickname })
   return { id: (result.rows[0] as any).id }
 }
 
 export async function updateStatus(id: number, status: string) {
+  const articleResult = await pool.query('SELECT article_id FROM comments WHERE id = $1', [id])
   await pool.query('UPDATE comments SET status = $1 WHERE id = $2', [status, id])
+  if (articleResult.rows.length > 0) {
+    const articleId = (articleResult.rows[0] as any).article_id
+    cache.invalidate(`comments:article:${articleId}`)
+  }
+  logger.info('Comment status updated', { id, status })
   return true
 }
 
 export async function remove(id: number) {
+  const articleResult = await pool.query('SELECT article_id FROM comments WHERE id = $1', [id])
   await pool.query('DELETE FROM comments WHERE parent_id = $1', [id])
   await pool.query('DELETE FROM comments WHERE id = $1', [id])
+  if (articleResult.rows.length > 0) {
+    const articleId = (articleResult.rows[0] as any).article_id
+    cache.invalidate(`comments:article:${articleId}`)
+  }
+  logger.info('Comment deleted', { id })
   return true
 }

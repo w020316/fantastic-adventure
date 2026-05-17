@@ -55,7 +55,7 @@
 │       └───────────┼───────────────┘              │
 │                   ▼                              │
 │           ┌──────────────┐                       │
-│           │   MySQL 数据库 │                      │
+│           │   PostgreSQL 数据库 │                      │
 │           └──────────────┘                       │
 └─────────────────────────────────────────────────┘
 ```
@@ -78,7 +78,7 @@ grbk/
 |------|------|------|
 | 前后端分离 | 是 | 前台和后台独立部署，职责清晰 |
 | Monorepo | npm workspace | 共享类型和工具，统一版本管理 |
-| 数据库 | MySQL 8 | 稳定可靠，适合博客结构化数据 |
+| 数据库 | PostgreSQL 15+ | 稳定可靠，适合博客结构化数据 |
 | 认证方式 | JWT | 无状态，前后端分离友好 |
 
 ---
@@ -392,7 +392,7 @@ GET `/api/articles` 支持查询参数：
 |------|------|------|
 | Express | ^4.x | Web 框架 |
 | TypeScript | ^5.x | 类型安全 |
-| mysql2 | ^3.x | MySQL 驱动 |
+| pg | ^8.x | PostgreSQL 驱动 |
 | jsonwebtoken | ^9.x | JWT 认证 |
 | bcryptjs | ^2.x | 密码加密 |
 | multer | ^1.x | 文件上传 |
@@ -402,7 +402,7 @@ GET `/api/articles` 支持查询参数：
 
 ### 7.4 数据库
 
-MySQL 8.x
+PostgreSQL 15+
 
 ### 7.5 共享
 
@@ -468,7 +468,7 @@ MySQL 8.x
 |------|------|
 | 前端（client + admin） | Vercel / Netlify 自动部署 |
 | 后端（server） | 云服务器 Node.js + PM2 |
-| 数据库 | 云 MySQL（阿里云 RDS / PlanetScale） |
+| 数据库 | 云 PostgreSQL（Supabase / Neon / Render PostgreSQL） |
 | 文件存储 | 服务器本地 / OSS |
 | CI/CD | GitHub Actions 自动构建部署 |
 

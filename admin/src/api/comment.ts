@@ -1,13 +1,15 @@
+import type { Comment, UpdateCommentStatusRequest } from 'shared'
+import type { ApiResponse, PaginatedResponse } from 'shared'
 import request from '../utils/request'
 
-export function getComments(params?: any) {
-  return request.get('/comments', { params })
+export function getComments(params?: { page?: number; limit?: number; status?: Comment['status'] }) {
+  return request.get<unknown, PaginatedResponse<Comment>>('/comments', { params })
 }
 
-export function updateCommentStatus(id: number, status: string) {
-  return request.put(`/comments/${id}/status`, { status })
+export function updateCommentStatus(id: number, data: UpdateCommentStatusRequest) {
+  return request.put<unknown, ApiResponse<Comment>>(`/comments/${id}/status`, data)
 }
 
 export function deleteComment(id: number) {
-  return request.delete(`/comments/${id}`)
+  return request.delete<unknown, ApiResponse<null>>(`/comments/${id}`)
 }

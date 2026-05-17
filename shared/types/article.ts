@@ -18,6 +18,11 @@ export interface Article {
   tags?: Tag[]
 }
 
+export interface ArticleDetail extends Article {
+  category_name?: string
+  tags?: Tag[]
+}
+
 export interface ArticleListQuery {
   page?: number
   limit?: number

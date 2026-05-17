@@ -3,7 +3,7 @@ import type Token from 'markdown-it/lib/token.mjs'
 import hljs from 'highlight.js'
 
 const md: MarkdownIt = new MarkdownIt({
-  html: true,
+  html: false,
   linkify: true,
   typographer: true,
   highlight(str: string, lang: string): string {

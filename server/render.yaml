@@ -3,7 +3,7 @@ services:
     name: fantastic-adventure-server
     runtime: node
     buildCommand: npm install && npm run build
-    startCommand: npm start
+    startCommand: node -r dotenv/config dist/app.js
     envVars:
       - key: NODE_ENV
         value: production
@@ -21,9 +21,13 @@ services:
         sync: false
       - key: JWT_SECRET
         generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
       - key: JWT_EXPIRES_IN
         value: 2h
       - key: JWT_REFRESH_EXPIRES_IN
         value: 7d
       - key: UPLOAD_DIR
         value: uploads
+      - key: LOG_LEVEL
+        value: info

@@ -29,8 +29,8 @@ async function loadComments() {
   total.value = res.data.total
 }
 
-async function handleStatus(id: number, status: string) {
-  await updateCommentStatus(id, status)
+async function handleStatus(id: number, status: 'pending' | 'approved' | 'hidden') {
+  await updateCommentStatus(id, { status })
   ElMessage.success('状态更新成功')
   loadComments()
 }

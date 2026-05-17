@@ -1,4 +1,6 @@
 import { pool } from '../../config/database'
+import { logger } from '../../utils/logger'
+import { cache } from '../../utils/cache'
 
 interface TagRow {
   id: number
@@ -8,10 +10,20 @@ interface TagRow {
 }
 
 export async function list() {
+  const cacheKey = 'tags:all'
+  const cached = cache.get<TagRow[]>(cacheKey)
+  if (cached) {
+    logger.debug('Tag list cache hit')
+    return cached
+  }
+
   const result = await pool.query(
     'SELECT t.*, (SELECT COUNT(*) FROM article_tags WHERE tag_id = t.id) as article_count FROM tags t ORDER BY t.id ASC'
   )
-  return result.rows as TagRow[]
+  const data = result.rows as TagRow[]
+  cache.set(cacheKey, data, 300000)
+  logger.info('Tag list fetched', { count: data.length })
+  return data
 }
 
 export async function create(name: string, color?: string) {
@@ -20,6 +32,8 @@ export async function create(name: string, color?: string) {
     [name, color || '#6366f1']
   )
   const insertId = (result.rows[0] as any).id
+  cache.invalidate('tags:all')
+  logger.info('Tag created', { id: insertId, name })
   return { id: insertId, name, color: color || '#6366f1' }
 }
 
@@ -33,10 +47,14 @@ export async function update(id: number, data: { name?: string; color?: string }
     params.push(id)
     await pool.query(`UPDATE tags SET ${fields.join(', ')} WHERE id = $${paramIndex}`, params)
   }
+  cache.invalidate('tags:all')
+  logger.info('Tag updated', { id })
   return true
 }
 
 export async function remove(id: number) {
   await pool.query('DELETE FROM tags WHERE id = $1', [id])
+  cache.invalidate('tags:all')
+  logger.info('Tag deleted', { id })
   return true
 }
