@@ -189,6 +189,12 @@ async function start() {
   })
 }
 
-start()
+start().catch((err) => {
+  console.error('[FATAL] Server failed to start:', err)
+  if (err instanceof Error) {
+    console.error('[FATAL] Stack:', err.stack)
+  }
+  process.exit(1)
+})
 
 export default app

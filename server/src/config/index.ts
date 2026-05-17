@@ -2,12 +2,8 @@ import dotenv from 'dotenv'
 
 dotenv.config()
 
-function getEnv(key: string, fallback?: string): string {
-  const value = process.env[key]
-  if (value) return value
-  if (fallback !== undefined) return fallback
-  console.warn(`[Config] Warning: environment variable "${key}" is not set, using fallback`)
-  return ''
+function getEnv(key: string): string {
+  return process.env[key] || ''
 }
 
 export const config = {
@@ -35,6 +31,8 @@ export function validateConfig(): void {
   if (!config.jwt.secret) errors.push('JWT_SECRET')
   if (!config.jwt.refreshSecret) errors.push('JWT_REFRESH_SECRET')
   if (errors.length > 0) {
-    throw new Error(`Missing required environment variables: ${errors.join(', ')}. Please set them in render.yaml or .env file.`)
+    console.error(`[Config] FATAL: Missing required environment variables: ${errors.join(', ')}`)
+    console.error('[Config] Please set these in Render Environment Variables or render.yaml envVars section')
+    throw new Error(`Missing environment variables: ${errors.join(', ')}`)
   }
 }
