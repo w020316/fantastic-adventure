@@ -13,6 +13,8 @@ const ALLOWED_MIME_TYPES = new Set([
   'image/svg+xml',
 ])
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024
+
 const MAX_FILENAME_LENGTH = 255
 
 function sanitizeFilename(filename: string): string {
@@ -45,6 +47,10 @@ const fileFilter = (_req: Request, file: Express.Multer.File, cb: FileFilterCall
   }
   if (!ALLOWED_MIME_TYPES.has(file.mimetype)) {
     cb(new Error('不支持的文件MIME类型'))
+    return
+  }
+  if (file.size > MAX_FILE_SIZE) {
+    cb(new Error(`文件大小不能超过 ${MAX_FILE_SIZE / 1024 / 1024}MB`))
     return
   }
   cb(null, true)

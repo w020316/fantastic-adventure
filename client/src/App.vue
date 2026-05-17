@@ -1,7 +1,17 @@
 <template>
   <div class="app-root">
     <LampIntro v-if="showIntro" @complete="onIntroComplete" />
-    <div class="min-h-screen" :class="{ 'page-visible': pageVisible }">
+    <div v-if="appError" class="min-h-screen flex items-center justify-center">
+      <div class="text-center p-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 mb-5">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+        </div>
+        <p class="text-[var(--color-text-secondary)] mb-4 text-lg">页面加载出错</p>
+        <pre class="text-xs text-[var(--color-text-muted)] bg-dark-100 p-4 rounded-lg overflow-auto max-w-md mx-auto mb-6 border border-dark-200">{{ appError.message }}</pre>
+        <button @click="resetError" class="px-6 py-2.5 rounded-lg bg-gradient-amber text-dark text-sm font-medium hover:opacity-90 transition-opacity shadow-md shadow-amber/15">重试</button>
+      </div>
+    </div>
+    <div v-else class="min-h-screen" :class="{ 'page-visible': pageVisible }">
       <AppHeader />
       <main class="pt-16">
         <router-view v-slot="{ Component, route }">
@@ -23,7 +33,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onErrorCaptured } from 'vue'
 import AppHeader from './components/layout/AppHeader.vue'
 import AppFooter from './components/layout/AppFooter.vue'
 import BackToTop from './components/BackToTop.vue'
@@ -34,6 +44,17 @@ const { message: toastMessage, visible: toastVisible } = useToast()
 
 const showIntro = ref(false)
 const pageVisible = ref(true)
+const appError = ref<Error | null>(null)
+
+onErrorCaptured((err: unknown) => {
+  console.error('[App] Uncaught error:', err)
+  appError.value = err instanceof Error ? err : new Error(String(err))
+  return false
+})
+
+function resetError() {
+  appError.value = null
+}
 
 onMounted(() => {
   const seen = sessionStorage.getItem('lamp-intro-seen')

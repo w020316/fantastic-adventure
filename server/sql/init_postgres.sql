@@ -62,6 +62,7 @@ CREATE TABLE IF NOT EXISTS comments (
 
 CREATE INDEX IF NOT EXISTS idx_comments_article ON comments(article_id);
 CREATE INDEX IF NOT EXISTS idx_comments_status ON comments(status);
+CREATE INDEX IF NOT EXISTS idx_comments_article_status ON comments(article_id, status);
 
 CREATE TABLE IF NOT EXISTS projects (
   id SERIAL PRIMARY KEY,

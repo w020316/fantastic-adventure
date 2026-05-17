@@ -9,6 +9,9 @@ export async function record(data: { path: string; ip?: string; referrer?: strin
   )
   cache.invalidate('stats:overview')
   cache.invalidate('stats:trend:*')
+  if (Math.random() < 0.01) {
+    cleanupOldStats(30).catch(() => {})
+  }
   return true
 }
 

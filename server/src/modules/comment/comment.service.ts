@@ -2,6 +2,20 @@ import { pool } from '../../config/database'
 import { logger } from '../../utils/logger'
 import { cache } from '../../utils/cache'
 
+const commentRateLimit = new Map<string, { count: number; resetAt: number }>()
+
+function checkCommentRateLimit(ip: string): boolean {
+  const now = Date.now()
+  const entry = commentRateLimit.get(ip)
+  if (!entry || now > entry.resetAt) {
+    commentRateLimit.set(ip, { count: 1, resetAt: now + 60000 })
+    return true
+  }
+  if (entry.count >= 3) return false
+  entry.count++
+  return true
+}
+
 interface CommentRow {
   id: number
   article_id: number
@@ -68,7 +82,10 @@ export async function listAll(query: { page?: number; limit?: number; status?: s
   return { list: result.rows as CommentRow[], total, page, limit }
 }
 
-export async function create(articleId: number, data: { nickname: string; email?: string; content: string; parent_id?: number }) {
+export async function create(articleId: number, data: { nickname: string; email?: string; content: string; parent_id?: number; ip?: string }) {
+  if (data.ip && !checkCommentRateLimit(data.ip)) {
+    throw new Error('评论过于频繁，请稍后再试')
+  }
   const result = await pool.query(
     'INSERT INTO comments (article_id, nickname, email, content, parent_id) VALUES ($1, $2, $3, $4, $5) RETURNING id',
     [articleId, data.nickname, data.email || null, data.content, data.parent_id || null]

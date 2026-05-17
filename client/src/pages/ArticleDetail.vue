@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { ref, reactive, onMounted, computed, watch, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { getArticle, likeArticle, getRelatedArticles } from '../api/article'
 import { getComments, createComment } from '../api/comment'
@@ -167,15 +167,21 @@ async function loadComments() {
 }
 
 function setupScrollSpy() {
+  let rafId: number | null = null
   const observer = new IntersectionObserver(
     (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          activeHeading.value = entry.target.id
+      if (rafId !== null) cancelAnimationFrame(rafId)
+      rafId = requestAnimationFrame(() => {
+        rafId = null
+        for (const entry of entries) {
+          if (entry.isIntersecting && entry.intersectionRatio >= 0.25) {
+            activeHeading.value = entry.target.id
+            break
+          }
         }
-      }
+      })
     },
-    { rootMargin: '-80px 0px -70% 0px' }
+    { rootMargin: '-80px 0px -70% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }
   )
   watch(headings, () => {
     setTimeout(() => {
@@ -185,6 +191,11 @@ function setupScrollSpy() {
       })
     }, 100)
   }, { immediate: true })
+
+  onUnmounted(() => {
+    observer.disconnect()
+    if (rafId !== null) cancelAnimationFrame(rafId)
+  })
 }
 
 async function handleLike() {

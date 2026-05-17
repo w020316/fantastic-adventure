@@ -15,7 +15,7 @@ export const listAll = asyncHandler(async (req: Request, res: Response) => {
 
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const articleId = parseInt(req.params.articleId)
-  const result = await commentService.create(articleId, req.body)
+  const result = await commentService.create(articleId, { ...req.body, ip: req.ip || req.socket.remoteAddress })
   res.status(201).json({ code: 201, message: '评论成功，等待审核', data: result })
 })
 

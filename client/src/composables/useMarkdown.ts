@@ -3,6 +3,7 @@ import type Token from 'markdown-it/lib/token.mjs'
 import hljs from 'highlight.js'
 
 const md: MarkdownIt = new MarkdownIt({
+  // Defense-in-depth: Disable raw HTML to prevent XSS attacks
   html: false,
   linkify: true,
   typographer: true,
@@ -19,6 +20,8 @@ const md: MarkdownIt = new MarkdownIt({
 })
 
 export function useMarkdown() {
+  // Second layer of defense: Render content through configured MarkdownIt instance
+  // which has HTML disabled and uses hljs for safe code highlighting
   function render(content: string): string {
     return md.render(content)
   }

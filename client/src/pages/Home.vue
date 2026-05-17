@@ -3,7 +3,7 @@
     <section class="relative min-h-screen flex items-center justify-center overflow-hidden">
       <div class="absolute inset-0 bg-gradient-amber opacity-[0.07]"></div>
       <div class="absolute inset-0" style="background: radial-gradient(circle at 30% 50%, rgba(255,183,77,0.12), transparent 50%), radial-gradient(circle at 70% 50%, rgba(230,126,34,0.1), transparent 50%)"></div>
-      <div class="hero-particles absolute inset-0 pointer-events-none overflow-hidden">
+      <div v-if="contentReady" class="hero-particles absolute inset-0 pointer-events-none overflow-hidden">
         <span v-for="i in 12" :key="i" class="particle" :style="{ left: `${(i * 8) % 100}%`, top: `${(i * 13 + 20) % 80}%`, animationDelay: `${i * 0.4}s`, animationDuration: `${4 + (i % 3)}s` }"></span>
       </div>
       <div class="relative z-10 text-center px-6">
@@ -18,8 +18,30 @@
 
     <section class="max-w-7xl mx-auto px-6 py-20">
       <h2 class="text-3xl font-display font-bold mb-10 gradient-text anim-fade-in-up">最新文章</h2>
-      <div v-if="loading" class="flex justify-center py-10">
-        <div class="w-8 h-8 border-2 border-amber border-t-transparent rounded-full animate-spin"></div>
+      <div v-if="loading" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div v-for="n in 6" :key="'skel-a-' + n" class="glass rounded-xl overflow-hidden animate-pulse">
+          <div class="h-48 bg-dark-200"></div>
+          <div class="p-6 space-y-3">
+            <div class="h-5 bg-dark-200 rounded w-3/4"></div>
+            <div class="h-4 bg-dark-200/60 rounded w-full"></div>
+            <div class="h-4 bg-dark-200/60 rounded w-2/3"></div>
+            <div class="flex gap-4 pt-2">
+              <div class="h-3 bg-dark-200/40 rounded w-16"></div>
+              <div class="h-3 bg-dark-200/40 rounded w-12"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else-if="error" class="text-center py-16 anim-fade-in-up">
+        <div class="inline-flex items-center justify-center w-14 h-14 rounded-full bg-red-500/10 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+        </div>
+        <p class="text-[var(--color-text-secondary)] text-lg mb-2">数据加载失败</p>
+        <p class="text-sm text-[var(--color-text-muted)] mb-6 max-w-md mx-auto">{{ error }}</p>
+        <button @click="retryLoad" class="px-6 py-2.5 rounded-lg bg-gradient-amber text-dark font-medium hover:opacity-90 transition-opacity shadow-md shadow-amber/15 inline-flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+          重新加载
+        </button>
       </div>
       <div v-else-if="!articles.length" class="text-center py-10 text-[var(--color-text-muted)]">暂无文章</div>
       <div v-else class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -73,9 +95,12 @@ useSeo({ title: 'MyBlog - 技术创造价值', description: '分享技术思考�
 const articles = ref<any[]>([])
 const projects = ref<any[]>([])
 const loading = ref(true)
+const error = ref('')
+const contentReady = ref(false)
 
-onMounted(async () => {
-  recordVisit({ path: '/' })
+async function loadData() {
+  loading.value = true
+  error.value = ''
   try {
     const [articleRes, projectRes]: any[] = await Promise.all([
       getArticles({ page: 1, limit: 6 }),
@@ -83,11 +108,20 @@ onMounted(async () => {
     ])
     articles.value = articleRes.data?.list || []
     projects.value = (projectRes.data || []).slice(0, 3)
-  } catch (err) {
+  } catch (err: any) {
+    error.value = err.response?.data?.message || '网络异常，请稍后重试'
     console.error('[Home] Failed to load data', err)
   } finally {
     loading.value = false
+    contentReady.value = true
   }
+}
+
+function retryLoad() { loadData() }
+
+onMounted(async () => {
+  recordVisit({ path: '/' })
+  await loadData()
 })
 </script>
 
