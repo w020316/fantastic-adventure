@@ -23,8 +23,8 @@
       <AppFooter />
       <BackToTop />
       <transition name="toast-fade">
-        <div v-if="toastVisible" class="toast-notification">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>
+        <div v-if="toastVisible" class="toast-notification border-l-2" :class="typeStyles[toastType]">
+          <span class="shrink-0 text-sm font-bold">{{ typeIcons[toastType] }}</span>
           {{ toastMessage }}
         </div>
       </transition>
@@ -40,7 +40,7 @@ import BackToTop from './components/BackToTop.vue'
 import LampIntro from './components/LampIntro.vue'
 import { useToast } from './composables/useToast'
 
-const { message: toastMessage, visible: toastVisible } = useToast()
+const { message: toastMessage, visible: toastVisible, toastType, typeStyles, typeIcons } = useToast()
 
 const showIntro = ref(false)
 const pageVisible = ref(true)
@@ -192,10 +192,7 @@ body {
   gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   border-radius: 0.75rem;
-  background: var(--color-surface-2);
-  color: var(--color-amber);
   font-size: 0.875rem;
-  border: 1px solid rgba(255, 183, 77, 0.2);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   backdrop-filter: blur(12px);
 }

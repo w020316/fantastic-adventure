@@ -193,7 +193,22 @@ export async function remove(id: number) {
   return true
 }
 
+const recentLikes = new Map<string, number>()
+const LIKE_COOLDOWN_MS = 10000
+
 export async function like(id: number, ip: string) {
+  const key = `${ip}:${id}`
+  const lastLike = recentLikes.get(key)
+  if (lastLike && Date.now() - lastLike < LIKE_COOLDOWN_MS) {
+    throw new AppError(429, '点赞过于频繁，请稍后再试')
+  }
+  recentLikes.set(key, Date.now())
+  if (recentLikes.size > 10000) {
+    const now = Date.now()
+    for (const [k, v] of recentLikes) {
+      if (now - v > LIKE_COOLDOWN_MS * 2) recentLikes.delete(k)
+    }
+  }
   await pool.query('UPDATE articles SET like_count = like_count + 1 WHERE id = $1', [id])
   cache.invalidate(`articles:detail:${id}`)
   logger.info('Article liked', { id, ip })

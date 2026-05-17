@@ -1,5 +1,5 @@
 <template>
-  <header class="fixed top-0 left-0 right-0 z-50 glass">
+  <header class="fixed top-0 left-0 right-0 z-50 transition-all duration-300" :class="scrolled ? 'glass' : 'bg-transparent'">
     <div class="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-amber/30 to-transparent"></div>
     <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
       <router-link to="/" class="text-xl font-display font-bold gradient-text tracking-wide">MyBlog</router-link>
@@ -20,9 +20,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 
 const mobileMenuOpen = ref(false)
+const scrolled = ref(false)
+
+function handleScroll() {
+  scrolled.value = window.scrollY > 20
+}
+
+onMounted(() => { window.addEventListener('scroll', handleScroll, { passive: true }) })
+onUnmounted(() => { window.removeEventListener('scroll', handleScroll) })
+
 const navItems = [
   { path: '/', label: '首页' },
   { path: '/articles', label: '文章' },

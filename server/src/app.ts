@@ -18,6 +18,7 @@ import commentRoutes from './modules/comment/comment.routes'
 import projectRoutes from './modules/project/project.routes'
 import statsRoutes from './modules/stats/stats.routes'
 import { cleanupOldStats } from './modules/stats/stats.service'
+import { cache } from './utils/cache'
 import uploadRoutes from './modules/upload/upload.routes'
 import siteInfoRoutes from './modules/siteInfo/siteInfo.routes'
 
@@ -172,6 +173,7 @@ async function start() {
 
   process.on('SIGTERM', async () => {
     logger.info('[Server] SIGTERM received, shutting down gracefully...')
+    cache.destroy()
     const { gracefulShutdown } = await import('./config/database')
     await gracefulShutdown()
     process.exit(0)
@@ -179,6 +181,7 @@ async function start() {
 
   process.on('SIGINT', async () => {
     logger.info('[Server] SIGINT received, shutting down gracefully...')
+    cache.destroy()
     const { gracefulShutdown } = await import('./config/database')
     await gracefulShutdown()
     process.exit(0)

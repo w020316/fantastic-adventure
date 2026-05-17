@@ -3,6 +3,17 @@ import * as authService from './auth.service'
 import { asyncHandler, createError } from '../../middleware/errorHandler'
 
 const loginAttempts = new Map<string, { count: number; lockedUntil?: number }>()
+const MAX_LOGIN_ENTRIES = 1000
+
+function pruneLoginAttempts(): void {
+  if (loginAttempts.size <= MAX_LOGIN_ENTRIES) return
+  const now = Date.now()
+  for (const [key, entry] of loginAttempts) {
+    if (entry.lockedUntil && now > entry.lockedUntil) {
+      loginAttempts.delete(key)
+    }
+  }
+}
 
 function checkLoginThrottle(username: string): { allowed: boolean; message?: string } {
   const now = Date.now()
@@ -16,6 +27,7 @@ function checkLoginThrottle(username: string): { allowed: boolean; message?: str
 }
 
 function recordLoginAttempt(username: string, success: boolean): void {
+  pruneLoginAttempts()
   const now = Date.now()
   const entry = loginAttempts.get(username) || { count: 0 }
 

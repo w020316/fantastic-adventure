@@ -3,8 +3,20 @@ import { logger } from '../../utils/logger'
 import { cache } from '../../utils/cache'
 
 const commentRateLimit = new Map<string, { count: number; resetAt: number }>()
+const MAX_IP_ENTRIES = 5000
+
+function pruneIpEntries(): void {
+  if (commentRateLimit.size <= MAX_IP_ENTRIES) return
+  const now = Date.now()
+  for (const [key, entry] of commentRateLimit) {
+    if (now > entry.resetAt) {
+      commentRateLimit.delete(key)
+    }
+  }
+}
 
 function checkCommentRateLimit(ip: string): boolean {
+  pruneIpEntries()
   const now = Date.now()
   const entry = commentRateLimit.get(ip)
   if (!entry || now > entry.resetAt) {

@@ -119,6 +119,7 @@ const error = ref('')
 const headings = ref<Array<{ level: number; text: string; id: string }>>([])
 const activeHeading = ref('')
 const replyTo = ref<{ id: number; nickname: string } | null>(null)
+const isLiking = ref(false)
 
 const commentForm = reactive({ nickname: '', email: '', content: '' })
 
@@ -199,12 +200,17 @@ function setupScrollSpy() {
 }
 
 async function handleLike() {
+  if (isLiking.value) return
+  isLiking.value = true
   try {
     await likeArticle(Number(route.params.id))
     if (article.value) article.value.like_count++
+    showToast('点赞成功 ❤️', 2000, 'success')
   } catch (err) {
-    console.error('[ArticleDetail] Failed to submit comment', err)
-    showToast('评论提交失败，请重试')
+    console.error('[ArticleDetail] Failed to like article', err)
+    showToast('点赞失败，请重试', 2500, 'error')
+  } finally {
+    setTimeout(() => { isLiking.value = false }, 3000)
   }
 }
 
@@ -215,7 +221,7 @@ function handleReply(comment: any) {
 
 async function handleComment() {
   if (!commentForm.nickname || !commentForm.content) {
-    showToast('请填写昵称和评论内容')
+    showToast('请填写昵称和评论内容', 2000, 'warning')
     return
   }
   try {
@@ -226,7 +232,10 @@ async function handleComment() {
     commentForm.content = ''
     replyTo.value = null
     await loadComments()
-  } catch {}
+  } catch (err) {
+    console.error('[ArticleDetail] Failed to submit comment', err)
+    showToast('评论提交失败，请重试', 2500, 'error')
+  }
 }
 
 function handleShare() {
