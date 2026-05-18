@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import ParticleIntro from '@/components/animation/ParticleIntro'
 
@@ -8,6 +8,7 @@ export default function LandingPage() {
   const [showIntro, setShowIntro] = useState(false)
   const [entered, setEntered] = useState(false)
   const router = useRouter()
+  const introSkippedRef = useRef(false)
 
   useEffect(() => {
     if (!sessionStorage.getItem('cyberblog-intro-shown')) {
@@ -16,9 +17,19 @@ export default function LandingPage() {
   }, [])
 
   const handleIntroComplete = useCallback(() => {
+    if (introSkippedRef.current) return
+    introSkippedRef.current = true
     sessionStorage.setItem('cyberblog-intro-shown', '1')
     setShowIntro(false)
   }, [])
+
+  useEffect(() => {
+    if (!showIntro) return
+    const timeout = setTimeout(() => {
+      handleIntroComplete()
+    }, 5000)
+    return () => clearTimeout(timeout)
+  }, [showIntro, handleIntroComplete])
 
   function handleEnter(target: string) {
     setEntered(true)
@@ -30,6 +41,15 @@ export default function LandingPage() {
   return (
     <>
       {showIntro && <ParticleIntro onComplete={handleIntroComplete} />}
+
+      {showIntro && (
+        <button
+          onClick={handleIntroComplete}
+          className="fixed bottom-6 right-6 z-[60] font-mono text-xs tracking-wider text-cyber-text-dim/70 border border-cyber-border/50 px-4 py-2 rounded-sm hover:border-cyber-neon hover:text-cyber-neon transition-all duration-300 backdrop-blur-sm bg-cyber-bg/50"
+        >
+          跳过动画 →
+        </button>
+      )}
 
       <div
         className={`relative flex min-h-screen flex-col items-center justify-center overflow-hidden transition-all duration-700 ${

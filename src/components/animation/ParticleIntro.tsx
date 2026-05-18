@@ -19,6 +19,10 @@ export default function ParticleIntro({ onComplete }: { onComplete: () => void }
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [phase, setPhase] = useState<'gathering' | 'exploding' | 'title' | 'fadeout'>('gathering')
   const particlesRef = useRef<Particle[]>([])
+  const completedRef = useRef(false)
+
+  const forceComplete = useRef(onComplete)
+  forceComplete.current = onComplete
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -26,16 +30,25 @@ export default function ParticleIntro({ onComplete }: { onComplete: () => void }
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
-    const cx = canvas.width / 2
-    const cy = canvas.height / 2
+    const isMobile = window.innerWidth < 768
+    const dpr = window.devicePixelRatio || 1
 
-    const count = 200
+    canvas.width = window.innerWidth * dpr
+    canvas.height = window.innerHeight * dpr
+    canvas.style.width = window.innerWidth + 'px'
+    canvas.style.height = window.innerHeight + 'px'
+    ctx.scale(dpr, dpr)
+
+    const cw = window.innerWidth
+    const ch = window.innerHeight
+    const cx = cw / 2
+    const cy = ch / 2
+
+    const count = isMobile ? 60 : 200
     const particles: Particle[] = []
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2
-      const dist = Math.max(canvas.width, canvas.height)
+      const dist = Math.max(cw, ch)
       particles.push({
         x: cx + Math.cos(angle) * dist * (0.5 + Math.random()),
         y: cy + Math.sin(angle) * dist * (0.5 + Math.random()),
@@ -54,7 +67,7 @@ export default function ParticleIntro({ onComplete }: { onComplete: () => void }
 
     function animate() {
       if (!ctx || !canvas) return
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      ctx.clearRect(0, 0, cw, ch)
       const elapsed = Date.now() - startTime
 
       for (const p of particles) {
@@ -74,7 +87,7 @@ export default function ParticleIntro({ onComplete }: { onComplete: () => void }
         ctx.globalAlpha = p.alpha
         ctx.fill()
 
-        if (p.size > 1.5) {
+        if (!isMobile && p.size > 1.5) {
           ctx.beginPath()
           ctx.arc(p.x, p.y, p.size * 3, 0, Math.PI * 2)
           ctx.fillStyle = p.color
@@ -84,7 +97,8 @@ export default function ParticleIntro({ onComplete }: { onComplete: () => void }
       }
       ctx.globalAlpha = 1
 
-      if (phase === 'gathering' && elapsed > 2000) {
+      const gatherTime = isMobile ? 1200 : 2000
+      if (phase === 'gathering' && elapsed > gatherTime) {
         setPhase('exploding')
         startTime = Date.now()
       }
@@ -104,14 +118,31 @@ export default function ParticleIntro({ onComplete }: { onComplete: () => void }
 
   useEffect(() => {
     if (phase === 'title') {
-      const timer = setTimeout(() => setPhase('fadeout'), 1500)
+      const isMobile = window.innerWidth < 768
+      const titleTime = isMobile ? 1000 : 1500
+      const timer = setTimeout(() => setPhase('fadeout'), titleTime)
       return () => clearTimeout(timer)
     }
     if (phase === 'fadeout') {
-      const timer = setTimeout(() => onComplete(), 800)
+      const timer = setTimeout(() => {
+        if (!completedRef.current) {
+          completedRef.current = true
+          onComplete()
+        }
+      }, 800)
       return () => clearTimeout(timer)
     }
   }, [phase, onComplete])
+
+  useEffect(() => {
+    const safety = setTimeout(() => {
+      if (!completedRef.current) {
+        completedRef.current = true
+        onComplete()
+      }
+    }, 6000)
+    return () => clearTimeout(safety)
+  }, [onComplete])
 
   return (
     <div

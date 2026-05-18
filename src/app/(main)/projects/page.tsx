@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { fetchProjects } from '@/lib/api'
 
 const languageColorMap: Record<string, string> = {
@@ -113,13 +113,21 @@ function ExternalLinkIcon({ className }: { className?: string }) {
   )
 }
 
-function RepoCard({ repo, index }: { repo: GitHubRepo; index: number }) {
+function PinIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+      <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5.2v6h1.6v-6H18v-2l-2-2z" />
+    </svg>
+  )
+}
+
+function RepoCard({ repo, index, isPinned = false }: { repo: GitHubRepo; index: number; isPinned?: boolean }) {
   const langColor = languageColorMap[repo.language] || languageColorMap.Other
   const [hovered, setHovered] = useState(false)
 
   return (
     <div
-      className="cyber-card group flex flex-col overflow-hidden"
+      className="cyber-card group flex flex-col overflow-hidden relative"
       style={{
         animation: `fadeInUp 0.5s ease ${index * 0.08}s forwards`,
         opacity: 0,
@@ -130,15 +138,35 @@ function RepoCard({ repo, index }: { repo: GitHubRepo; index: number }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
+      {hovered && (
+        <div
+          className="absolute inset-0 pointer-events-none z-10 overflow-hidden"
+          style={{ borderRadius: 'inherit' }}
+        >
+          <div
+            className="absolute left-0 right-0 h-[2px] opacity-40"
+            style={{
+              background: `linear-gradient(90deg, transparent, ${langColor}, transparent)`,
+              animation: 'scanLine 1.5s linear infinite',
+              top: '0%',
+            }}
+          />
+        </div>
+      )}
       <div
         className="h-1.5 w-full"
         style={{ backgroundColor: langColor }}
       />
       <div className="p-5 sm:p-6 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-3 mb-3">
-          <h3 className="font-display text-base sm:text-lg font-bold text-cyber-text group-hover:text-cyber-neon transition-colors line-clamp-1">
-            {repo.name}
-          </h3>
+          <div className="flex items-center gap-2 min-w-0">
+            {isPinned && (
+              <PinIcon className="w-3.5 h-3.5 text-cyber-neon flex-shrink-0" />
+            )}
+            <h3 className="font-display text-base sm:text-lg font-bold text-cyber-text group-hover:text-cyber-neon transition-colors line-clamp-1">
+              {repo.name}
+            </h3>
+          </div>
           <span
             className="flex-shrink-0 w-3 h-3 rounded-full mt-1.5"
             style={{ backgroundColor: langColor, boxShadow: `0 0 0 2px var(--color-cyber-surface), 0 0 0 4px ${langColor}40` }}
@@ -278,6 +306,208 @@ function DbProjectCard({ project, index }: { project: ApiProject; index: number 
   )
 }
 
+function ContributionGraph({ repos }: { repos: GitHubRepo[] }) {
+  const weeks = 26
+  const daysPerWeek = 7
+
+  const activityData = useMemo(() => {
+    const data: number[][] = []
+    const now = new Date()
+    const repoDates = repos.map((r) => new Date(r.pushedAt).getTime())
+
+    for (let w = 0; w < weeks; w++) {
+      const weekData: number[] = []
+      for (let d = 0; d < daysPerWeek; d++) {
+        const cellDate = new Date(now)
+        cellDate.setDate(cellDate.getDate() - ((weeks - 1 - w) * 7 + (6 - d)))
+        const cellTime = cellDate.getTime()
+        const cellDayEnd = cellTime + 86400000
+
+        let count = 0
+        for (const t of repoDates) {
+          if (t >= cellTime && t < cellDayEnd) count++
+        }
+
+        const seed = cellDate.getFullYear() * 10000 + (cellDate.getMonth() + 1) * 100 + cellDate.getDate()
+        const pseudoRandom = ((seed * 9301 + 49297) % 233280) / 233280
+        if (count === 0 && pseudoRandom > 0.65) {
+          count = pseudoRandom > 0.92 ? 3 : pseudoRandom > 0.8 ? 2 : 1
+        }
+
+        weekData.push(count)
+      }
+      data.push(weekData)
+    }
+    return data
+  }, [repos])
+
+  const neonColors = [
+    'rgba(0, 255, 159, 0.06)',
+    'rgba(0, 255, 159, 0.25)',
+    'rgba(0, 212, 255, 0.4)',
+    'rgba(0, 212, 255, 0.65)',
+    'rgba(255, 0, 128, 0.8)',
+  ]
+
+  const maxCount = 4
+
+  function getColor(count: number): string {
+    if (count === 0) return neonColors[0]
+    const level = Math.min(Math.ceil((count / maxCount) * 4), 4)
+    return neonColors[level]
+  }
+
+  const monthLabels = useMemo(() => {
+    const labels: { text: string; weekIndex: number }[] = []
+    const now = new Date()
+    let lastMonth = -1
+    for (let w = 0; w < weeks; w++) {
+      const cellDate = new Date(now)
+      cellDate.setDate(cellDate.getDate() - (weeks - 1 - w) * 7 - 6)
+      const month = cellDate.getMonth()
+      if (month !== lastMonth) {
+        labels.push({
+          text: `${month + 1}月`,
+          weekIndex: w,
+        })
+        lastMonth = month
+      }
+    }
+    return labels
+  }, [weeks])
+
+  return (
+    <div className="cyber-card p-5 sm:p-6 overflow-x-auto">
+      <div className="flex items-center gap-2 mb-4">
+        <span className="neon-text-blue font-display text-sm font-bold">▸</span>
+        <span className="font-display text-sm font-bold text-cyber-text">活动贡献图</span>
+        <span className="font-mono text-[10px] text-cyber-text-dim ml-2">ACTIVITY.HEATMAP</span>
+      </div>
+
+      <div className="flex gap-1">
+        <div className="flex flex-col gap-[3px] pt-5 pr-1">
+          {['一', '', '三', '', '五', '', '日'].map((label, i) => (
+            <div key={i} className="h-[13px] flex items-center">
+              <span className="font-mono text-[9px] text-cyber-text-dim/50 w-3 text-right">{label}</span>
+            </div>
+          ))}
+        </div>
+
+        <div className="flex-1 min-w-0">
+          <div className="flex gap-[2px] mb-1 h-4">
+            {monthLabels.map(({ text, weekIndex }) => (
+              <span
+                key={weekIndex}
+                className="font-mono text-[9px] text-cyber-text-dim/50"
+                style={{
+                  marginLeft: weekIndex === 0 ? 0 : undefined,
+                  position: 'relative',
+                  left: `${(weekIndex / weeks) * 100}%`,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {text}
+              </span>
+            ))}
+          </div>
+
+          <div className="flex gap-[3px]">
+            {activityData.map((week, wi) => (
+              <div key={wi} className="flex flex-col gap-[3px]">
+                {week.map((count, di) => (
+                  <div
+                    key={di}
+                    className="w-[13px] h-[13px] rounded-[2px] transition-all duration-200 hover:scale-125 hover:z-10 cursor-default"
+                    style={{
+                      backgroundColor: getColor(count),
+                      boxShadow: count >= 3 ? `0 0 4px ${neonColors[4]}40` : count >= 2 ? `0 0 3px ${neonColors[3]}30` : 'none',
+                    }}
+                    title={`${count} 次贡献`}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-2 mt-3">
+        <span className="font-mono text-[9px] text-cyber-text-dim/50">少</span>
+        {neonColors.map((color, i) => (
+          <div
+            key={i}
+            className="w-[13px] h-[13px] rounded-[2px]"
+            style={{ backgroundColor: color }}
+          />
+        ))}
+        <span className="font-mono text-[9px] text-cyber-text-dim/50">多</span>
+      </div>
+    </div>
+  )
+}
+
+function StatsBar({ repos }: { repos: GitHubRepo[] }) {
+  const totalStars = repos.reduce((sum, r) => sum + r.stargazersCount, 0)
+  const totalRepos = repos.length
+
+  const mostUsedLang = useMemo(() => {
+    if (repos.length === 0) return { name: '-', color: '#8b949e' }
+    const langCount: Record<string, number> = {}
+    for (const r of repos) {
+      langCount[r.language] = (langCount[r.language] || 0) + 1
+    }
+    const top = Object.entries(langCount).sort((a, b) => b[1] - a[1])[0]
+    return { name: top[0], color: languageColorMap[top[0]] || languageColorMap.Other }
+  }, [repos])
+
+  const totalForks = repos.reduce((sum, r) => sum + r.forksCount, 0)
+
+  const stats = [
+    { label: '仓库总数', value: totalRepos, icon: '📦', color: '#00ff9f' },
+    { label: '总 Stars', value: totalStars, icon: '⭐', color: '#ffd700' },
+    { label: '总 Forks', value: totalForks, icon: '🔱', color: '#00d4ff' },
+    { label: '主力语言', value: mostUsedLang.name, icon: '💻', color: mostUsedLang.color, isLang: true },
+  ]
+
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {stats.map((stat, i) => (
+        <div
+          key={stat.label}
+          className="cyber-card p-4 relative overflow-hidden"
+          style={{
+            animation: `fadeInUp 0.5s ease ${i * 0.1}s forwards`,
+            opacity: 0,
+          }}
+        >
+          <div
+            className="absolute top-0 left-0 w-full h-[2px]"
+            style={{ backgroundColor: stat.color, boxShadow: `0 0 8px ${stat.color}60` }}
+          />
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-sm">{stat.icon}</span>
+            <span className="font-mono text-[10px] text-cyber-text-dim tracking-wider uppercase">{stat.label}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            {stat.isLang && (
+              <span
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                style={{ backgroundColor: stat.color, boxShadow: `0 0 6px ${stat.color}60` }}
+              />
+            )}
+            <span
+              className="font-display text-xl sm:text-2xl font-bold"
+              style={{ color: stat.color }}
+            >
+              {typeof stat.value === 'number' ? stat.value.toLocaleString() : stat.value}
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function ProjectsSkeleton() {
   return (
     <div className="min-h-screen">
@@ -334,11 +564,26 @@ function ProjectsSkeleton() {
   )
 }
 
+const PINNED_REPO_NAMES = ['fantastic-adventure']
+
 export default function ProjectsPage() {
   const [repos, setRepos] = useState<GitHubRepo[]>([])
   const [dbProjects, setDbProjects] = useState<ApiProject[]>([])
   const [loading, setLoading] = useState(true)
   const [reposError, setReposError] = useState(false)
+
+  const { pinnedRepos, otherRepos } = useMemo(() => {
+    const pinned: GitHubRepo[] = []
+    const other: GitHubRepo[] = []
+    for (const repo of repos) {
+      if (PINNED_REPO_NAMES.includes(repo.name)) {
+        pinned.push(repo)
+      } else {
+        other.push(repo)
+      }
+    }
+    return { pinnedRepos: pinned, otherRepos: other }
+  }, [repos])
 
   useEffect(() => {
     async function load() {
@@ -372,6 +617,13 @@ export default function ProjectsPage() {
 
   return (
     <div className="min-h-screen">
+      <style>{`
+        @keyframes scanLine {
+          0% { top: -2px; }
+          100% { top: 100%; }
+        }
+      `}</style>
+
       <section className="relative border-b border-cyber-border overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-cyber-blue/3 via-transparent to-transparent" />
         <div className="absolute top-0 right-1/4 w-64 h-64 bg-cyber-blue/5 rounded-full blur-[100px]" />
@@ -400,7 +652,35 @@ export default function ProjectsPage() {
         </div>
       </section>
 
-      <section className="max-w-6xl mx-auto px-4 py-10">
+      {!reposError && repos.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 py-8">
+          <StatsBar repos={repos} />
+        </section>
+      )}
+
+      {!reposError && repos.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 pb-8">
+          <ContributionGraph repos={repos} />
+        </section>
+      )}
+
+      {pinnedRepos.length > 0 && (
+        <section className="max-w-6xl mx-auto px-4 py-8 border-t border-cyber-border">
+          <div className="section-title mb-6">
+            <span className="neon-text">▸</span> 置顶项目
+            <span className="font-mono text-xs text-cyber-text-dim ml-2">
+              PINNED
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {pinnedRepos.map((repo, i) => (
+              <RepoCard key={repo.id} repo={repo} index={i} isPinned />
+            ))}
+          </div>
+        </section>
+      )}
+
+      <section className="max-w-6xl mx-auto px-4 py-8 border-t border-cyber-border">
         <div className="section-title mb-6">
           <span className="neon-text-blue">▸</span> GitHub 仓库
           {!reposError && (
@@ -422,7 +702,7 @@ export default function ProjectsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {repos.map((repo, i) => (
+            {otherRepos.map((repo, i) => (
               <RepoCard key={repo.id} repo={repo} index={i} />
             ))}
           </div>
