@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
 
@@ -20,20 +19,10 @@ interface Article {
 }
 
 export default function AdminArticlesPage() {
-  const { data: session, status: sessionStatus } = useSession()
-  const router = useRouter()
+  const { status: sessionStatus } = useSession()
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (sessionStatus === 'unauthenticated') {
-      router.push('/admin/login')
-    }
-    if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
-      router.push('/admin/login')
-    }
-  }, [sessionStatus, session, router])
 
   useEffect(() => {
     if (sessionStatus !== 'authenticated') return
@@ -45,7 +34,6 @@ export default function AdminArticlesPage() {
           setArticles(data.articles || [])
         }
       } catch {
-        console.error('获取文章列表失败')
       } finally {
         setLoading(false)
       }
@@ -70,37 +58,15 @@ export default function AdminArticlesPage() {
     }
   }
 
-  if (sessionStatus === 'loading') {
-    return (
-      <div className="min-h-screen grid-bg p-6">
-        <div className="max-w-6xl mx-auto">
-          <div className="h-8 w-48 bg-cyber-surface animate-pulse rounded mb-8" />
-          <div className="space-y-3">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="cyber-card p-4 flex items-center gap-4">
-                <div className="h-4 w-64 bg-cyber-border animate-pulse rounded" />
-                <div className="h-5 w-16 bg-cyber-border animate-pulse rounded" />
-                <div className="h-4 w-20 bg-cyber-border animate-pulse rounded" />
-                <div className="h-4 w-24 bg-cyber-border animate-pulse rounded" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  if (sessionStatus !== 'authenticated' || (session?.user as { role?: string })?.role !== 'ADMIN') {
-    return null
-  }
-
   return (
-    <div className="min-h-screen grid-bg p-4 sm:p-6">
+    <div className="p-4 sm:p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="font-display text-xl sm:text-2xl font-bold neon-text">
-            文章管理
-          </h1>
+          <div className="flex items-center gap-3">
+            <Link href="/admin" className="font-mono text-xs text-cyber-text-dim hover:text-cyber-neon transition-colors">
+              ← 仪表盘
+            </Link>
+          </div>
           <Link href="/admin/articles/new" className="cyber-button text-xs">
             + 新建文章
           </Link>

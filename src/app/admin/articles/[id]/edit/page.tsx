@@ -9,6 +9,7 @@ import rehypeSlug from 'rehype-slug'
 import rehypeHighlight from 'rehype-highlight'
 import { slugify } from '@/lib/utils'
 import { articleSchema } from '@/lib/validations'
+import Link from 'next/link'
 
 interface Category {
   id: string
@@ -34,7 +35,7 @@ interface ArticleData {
 }
 
 export default function AdminArticleEditPage() {
-  const { data: session, status: sessionStatus } = useSession()
+  const { status: sessionStatus } = useSession()
   const router = useRouter()
   const params = useParams()
   const articleId = params.id as string
@@ -54,15 +55,6 @@ export default function AdminArticleEditPage() {
   const [loadingArticle, setLoadingArticle] = useState(true)
 
   useEffect(() => {
-    if (sessionStatus === 'unauthenticated') {
-      router.push('/admin/login')
-    }
-    if (sessionStatus === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
-      router.push('/admin/login')
-    }
-  }, [sessionStatus, session, router])
-
-  useEffect(() => {
     if (sessionStatus !== 'authenticated') return
     async function fetchMeta() {
       try {
@@ -79,7 +71,6 @@ export default function AdminArticleEditPage() {
           setTags(tagData.tags || [])
         }
       } catch {
-        console.error('获取分类/标签失败')
       }
     }
     fetchMeta()
@@ -173,10 +164,10 @@ export default function AdminArticleEditPage() {
     }
   }
 
-  if (sessionStatus === 'loading' || loadingArticle) {
+  if (loadingArticle) {
     return (
-      <div className="min-h-screen grid-bg p-6">
-        <div className="max-w-6xl mx-auto">
+      <div className="p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
           <div className="h-8 w-48 bg-cyber-surface animate-pulse rounded mb-8" />
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
@@ -192,23 +183,15 @@ export default function AdminArticleEditPage() {
     )
   }
 
-  if (sessionStatus !== 'authenticated' || (session?.user as { role?: string })?.role !== 'ADMIN') {
-    return null
-  }
-
   return (
-    <div className="min-h-screen grid-bg p-4 sm:p-6">
+    <div className="p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-8">
-          <h1 className="font-display text-xl sm:text-2xl font-bold neon-text">
-            编辑文章
-          </h1>
-          <button
-            onClick={() => router.push('/admin/articles')}
-            className="font-mono text-xs text-cyber-text-dim hover:text-cyber-neon transition-colors"
-          >
-            ← 返回列表
-          </button>
+          <div className="flex items-center gap-3">
+            <Link href="/admin/articles" className="font-mono text-xs text-cyber-text-dim hover:text-cyber-neon transition-colors">
+              ← 文章列表
+            </Link>
+          </div>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -344,11 +327,11 @@ export default function AdminArticleEditPage() {
               </button>
             </div>
 
-            <div>
+            <div className="lg:block">
               <div className="font-mono text-xs text-cyber-text-dim mb-2">
                 <span className="neon-text-blue">▸</span> 预览
               </div>
-              <div className="cyber-card p-6 min-h-[32rem] max-h-[80vh] overflow-y-auto">
+              <div className="cyber-card p-4 sm:p-6 min-h-[20rem] lg:min-h-[32rem] max-h-[80vh] overflow-y-auto">
                 {content ? (
                   <div className="prose-cyber">
                     <ReactMarkdown
@@ -360,7 +343,7 @@ export default function AdminArticleEditPage() {
                   </div>
                 ) : (
                   <p className="font-mono text-xs text-cyber-text-dim">
-                    {'// 在左侧输入 Markdown 内容，预览将在此显示'}
+                    {'// 在上方输入 Markdown 内容，预览将在此显示'}
                   </p>
                 )}
               </div>

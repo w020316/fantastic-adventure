@@ -1,8 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useSession, signOut } from 'next-auth/react'
-import { useRouter } from 'next/navigation'
+import { useSession } from 'next-auth/react'
 import { projectSchema } from '@/lib/validations'
 
 interface Project {
@@ -14,71 +13,6 @@ interface Project {
   techStack: string[]
   featured: boolean
   order?: number
-}
-
-function Sidebar({ mobileOpen, onClose }: { mobileOpen: boolean; onClose: () => void }) {
-  const links = [
-    { href: '/admin', label: '仪表盘' },
-    { href: '/admin/articles', label: '文章管理' },
-    { href: '/admin/comments', label: '评论审核' },
-    { href: '/admin/projects', label: '项目管理' },
-  ]
-
-  const nav = (
-    <nav className="flex flex-col h-full">
-      <div className="p-4 border-b border-cyber-border">
-        <h1 className="font-display text-lg font-bold neon-text">ADMIN</h1>
-        <p className="font-mono text-xs text-cyber-text-dim mt-1">{'// 管理后台'}</p>
-      </div>
-      <div className="flex-1 py-4 space-y-1 px-2">
-        {links.map((link) => (
-          <a
-            key={link.href}
-            href={link.href}
-            className={`block font-mono text-xs px-3 py-2.5 rounded-sm transition-all ${
-              link.href === '/admin/projects'
-                ? 'border border-cyber-neon/30 text-cyber-neon bg-cyber-neon/5'
-                : 'text-cyber-text-dim hover:text-cyber-neon hover:bg-cyber-neon/5'
-            }`}
-          >
-            {link.label}
-          </a>
-        ))}
-      </div>
-      <div className="p-4 border-t border-cyber-border">
-        <button
-          onClick={() => signOut({ callbackUrl: '/admin/login' })}
-          className="w-full cyber-button py-2 text-xs"
-          style={{ borderColor: 'var(--color-cyber-pink)', color: 'var(--color-cyber-pink)' }}
-        >
-          退出登录
-        </button>
-      </div>
-    </nav>
-  )
-
-  return (
-    <>
-      <aside className="hidden lg:block w-56 flex-shrink-0 h-screen sticky top-0 border-r border-cyber-border bg-cyber-bg">
-        {nav}
-      </aside>
-      {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="absolute inset-0 bg-black/60" onClick={onClose} />
-          <aside className="absolute left-0 top-0 bottom-0 w-56 bg-cyber-bg border-r border-cyber-border">
-            <div className="flex justify-end p-2">
-              <button onClick={onClose} className="text-cyber-text-dim hover:text-cyber-neon p-1">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            {nav}
-          </aside>
-        </div>
-      )}
-    </>
-  )
 }
 
 function SkeletonCard() {
@@ -115,11 +49,9 @@ const emptyForm = {
 }
 
 export default function AdminProjectsPage() {
-  const { data: session, status } = useSession()
-  const router = useRouter()
+  const { status } = useSession()
   const [projects, setProjects] = useState<Project[]>([])
   const [loading, setLoading] = useState(true)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState(emptyForm)
   const [formErrors, setFormErrors] = useState<Record<string, string>>({})
@@ -141,32 +73,10 @@ export default function AdminProjectsPage() {
   }, [])
 
   useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/admin/login')
-      return
-    }
     if (status === 'authenticated') {
       fetchProjects()
     }
-  }, [status, router, fetchProjects])
-
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen grid-bg flex">
-        <Sidebar mobileOpen={false} onClose={() => {}} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
-          <div className="section-title mb-6">
-            <span className="neon-text-blue">▸</span> 项目管理
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
-          </div>
-        </main>
-      </div>
-    )
-  }
-
-  if (!session) return null
+  }, [status, fetchProjects])
 
   function validateForm() {
     const result = projectSchema.safeParse({
@@ -238,216 +148,198 @@ export default function AdminProjectsPage() {
   }
 
   return (
-    <div className="min-h-screen grid-bg flex">
-      <Sidebar mobileOpen={mobileMenuOpen} onClose={() => setMobileMenuOpen(false)} />
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="flex items-center justify-between mb-6">
+        <div />
+        <button
+          onClick={() => {
+            setShowForm(!showForm)
+            setForm(emptyForm)
+            setFormErrors({})
+          }}
+          className="cyber-button py-1.5 px-4 text-xs"
+        >
+          {showForm ? '取消' : '+ 新建项目'}
+        </button>
+      </div>
 
-      <main className="flex-1 min-w-0">
-        <div className="sticky top-0 z-10 bg-cyber-bg/80 backdrop-blur-sm border-b border-cyber-border px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="lg:hidden text-cyber-text-dim hover:text-cyber-neon p-1"
-            >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              </svg>
-            </button>
-            <div className="section-title mb-0">
-              <span className="neon-text-blue">▸</span> 项目管理
-            </div>
+      {showForm && (
+        <div className="cyber-card p-5 mb-6" style={{ animation: 'fadeInUp 0.3s ease forwards' }}>
+          <div className="section-title mb-4">
+            <span className="neon-text">▸</span> 新建项目
           </div>
-          <button
-            onClick={() => {
-              setShowForm(!showForm)
-              setForm(emptyForm)
-              setFormErrors({})
-            }}
-            className="cyber-button py-1.5 px-4 text-xs"
-          >
-            {showForm ? '取消' : '+ 新建项目'}
-          </button>
-        </div>
-
-        <div className="p-4 sm:p-6 lg:p-8">
-          {showForm && (
-            <div className="cyber-card p-5 mb-6" style={{ animation: 'fadeInUp 0.3s ease forwards' }}>
-              <div className="section-title mb-4">
-                <span className="neon-text">▸</span> 新建项目
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="proj-title" className="block font-mono text-xs text-cyber-text-dim mb-1">
+                标题 *
+              </label>
+              <input
+                id="proj-title"
+                type="text"
+                value={form.title}
+                onChange={(e) => setForm({ ...form, title: e.target.value })}
+                className="cyber-input text-sm"
+                style={{ paddingLeft: '1rem' }}
+                placeholder="项目标题"
+              />
+              {formErrors.title && (
+                <p className="font-mono text-xs text-cyber-pink mt-1">{formErrors.title}</p>
+              )}
+            </div>
+            <div>
+              <label htmlFor="proj-desc" className="block font-mono text-xs text-cyber-text-dim mb-1">
+                描述 *
+              </label>
+              <textarea
+                id="proj-desc"
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                className="cyber-input text-sm"
+                style={{ paddingLeft: '1rem' }}
+                rows={3}
+                placeholder="项目描述"
+              />
+              {formErrors.description && (
+                <p className="font-mono text-xs text-cyber-pink mt-1">{formErrors.description}</p>
+              )}
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="proj-demo" className="block font-mono text-xs text-cyber-text-dim mb-1">
+                  演示地址
+                </label>
+                <input
+                  id="proj-demo"
+                  type="text"
+                  value={form.demoUrl}
+                  onChange={(e) => setForm({ ...form, demoUrl: e.target.value })}
+                  className="cyber-input text-sm"
+                  style={{ paddingLeft: '1rem' }}
+                  placeholder="https://demo.example.com"
+                />
+                {formErrors.demoUrl && (
+                  <p className="font-mono text-xs text-cyber-pink mt-1">{formErrors.demoUrl}</p>
+                )}
               </div>
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="proj-title" className="block font-mono text-xs text-cyber-text-dim mb-1">
-                    标题 *
-                  </label>
-                  <input
-                    id="proj-title"
-                    type="text"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
-                    className="cyber-input text-sm"
-                    style={{ paddingLeft: '1rem' }}
-                    placeholder="项目标题"
-                  />
-                  {formErrors.title && (
-                    <p className="font-mono text-xs text-cyber-pink mt-1">{formErrors.title}</p>
-                  )}
-                </div>
-                <div>
-                  <label htmlFor="proj-desc" className="block font-mono text-xs text-cyber-text-dim mb-1">
-                    描述 *
-                  </label>
-                  <textarea
-                    id="proj-desc"
-                    value={form.description}
-                    onChange={(e) => setForm({ ...form, description: e.target.value })}
-                    className="cyber-input text-sm"
-                    style={{ paddingLeft: '1rem' }}
-                    rows={3}
-                    placeholder="项目描述"
-                  />
-                  {formErrors.description && (
-                    <p className="font-mono text-xs text-cyber-pink mt-1">{formErrors.description}</p>
-                  )}
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label htmlFor="proj-demo" className="block font-mono text-xs text-cyber-text-dim mb-1">
-                      演示地址
-                    </label>
-                    <input
-                      id="proj-demo"
-                      type="text"
-                      value={form.demoUrl}
-                      onChange={(e) => setForm({ ...form, demoUrl: e.target.value })}
-                      className="cyber-input text-sm"
-                      style={{ paddingLeft: '1rem' }}
-                      placeholder="https://demo.example.com"
-                    />
-                    {formErrors.demoUrl && (
-                      <p className="font-mono text-xs text-cyber-pink mt-1">{formErrors.demoUrl}</p>
-                    )}
-                  </div>
-                  <div>
-                    <label htmlFor="proj-repo" className="block font-mono text-xs text-cyber-text-dim mb-1">
-                      仓库地址
-                    </label>
-                    <input
-                      id="proj-repo"
-                      type="text"
-                      value={form.repoUrl}
-                      onChange={(e) => setForm({ ...form, repoUrl: e.target.value })}
-                      className="cyber-input text-sm"
-                      style={{ paddingLeft: '1rem' }}
-                      placeholder="https://github.com/..."
-                    />
-                    {formErrors.repoUrl && (
-                      <p className="font-mono text-xs text-cyber-pink mt-1">{formErrors.repoUrl}</p>
-                    )}
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="proj-tech" className="block font-mono text-xs text-cyber-text-dim mb-1">
-                    技术栈 (逗号分隔)
-                  </label>
-                  <input
-                    id="proj-tech"
-                    type="text"
-                    value={form.techStack}
-                    onChange={(e) => setForm({ ...form, techStack: e.target.value })}
-                    className="cyber-input text-sm"
-                    style={{ paddingLeft: '1rem' }}
-                    placeholder="Next.js, React, TypeScript"
-                  />
-                  {formErrors.techStack && (
-                    <p className="font-mono text-xs text-cyber-pink mt-1">{formErrors.techStack}</p>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    id="proj-featured"
-                    type="checkbox"
-                    checked={form.featured}
-                    onChange={(e) => setForm({ ...form, featured: e.target.checked })}
-                    className="accent-[var(--color-cyber-neon)]"
-                  />
-                  <label htmlFor="proj-featured" className="font-mono text-xs text-cyber-text-dim">
-                    精选项目
-                  </label>
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="cyber-button py-2 px-6 text-xs disabled:opacity-50"
-                  >
-                    {submitting ? '创建中...' : '创建项目'}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForm(false)
-                      setForm(emptyForm)
-                      setFormErrors({})
-                    }}
-                    className="cyber-button py-2 px-6 text-xs"
-                    style={{ borderColor: 'var(--color-cyber-text-dim)', color: 'var(--color-cyber-text-dim)' }}
-                  >
-                    取消
-                  </button>
-                </div>
-              </form>
+              <div>
+                <label htmlFor="proj-repo" className="block font-mono text-xs text-cyber-text-dim mb-1">
+                  仓库地址
+                </label>
+                <input
+                  id="proj-repo"
+                  type="text"
+                  value={form.repoUrl}
+                  onChange={(e) => setForm({ ...form, repoUrl: e.target.value })}
+                  className="cyber-input text-sm"
+                  style={{ paddingLeft: '1rem' }}
+                  placeholder="https://github.com/..."
+                />
+                {formErrors.repoUrl && (
+                  <p className="font-mono text-xs text-cyber-pink mt-1">{formErrors.repoUrl}</p>
+                )}
+              </div>
             </div>
-          )}
-
-          {loading ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+            <div>
+              <label htmlFor="proj-tech" className="block font-mono text-xs text-cyber-text-dim mb-1">
+                技术栈 (逗号分隔)
+              </label>
+              <input
+                id="proj-tech"
+                type="text"
+                value={form.techStack}
+                onChange={(e) => setForm({ ...form, techStack: e.target.value })}
+                className="cyber-input text-sm"
+                style={{ paddingLeft: '1rem' }}
+                placeholder="Next.js, React, TypeScript"
+              />
+              {formErrors.techStack && (
+                <p className="font-mono text-xs text-cyber-pink mt-1">{formErrors.techStack}</p>
+              )}
             </div>
-          ) : projects.length === 0 ? (
-            <div className="cyber-card p-12 text-center">
-              <p className="font-mono text-cyber-text-dim text-sm">暂无项目</p>
+            <div className="flex items-center gap-2">
+              <input
+                id="proj-featured"
+                type="checkbox"
+                checked={form.featured}
+                onChange={(e) => setForm({ ...form, featured: e.target.checked })}
+                className="accent-[var(--color-cyber-neon)]"
+              />
+              <label htmlFor="proj-featured" className="font-mono text-xs text-cyber-text-dim">
+                精选项目
+              </label>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {projects.map((project) => (
-                <div key={project.id} className="cyber-card p-5 flex flex-col">
-                  <div className="flex items-start justify-between mb-3">
-                    <h3 className="font-display text-sm font-bold text-cyber-text leading-tight">
-                      {project.title}
-                    </h3>
-                    {project.featured && (
-                      <span className="cyber-tag cyber-tag-yellow flex-shrink-0 ml-2">★ 精选</span>
-                    )}
-                  </div>
-                  <p className="text-cyber-text-dim text-xs leading-relaxed mb-3 flex-1 line-clamp-3">
-                    {project.description}
-                  </p>
-                  <div className="flex flex-wrap gap-1.5 mb-4">
-                    {project.techStack?.map((tech) => (
-                      <span key={tech} className="cyber-tag">{tech}</span>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-2 pt-2 border-t border-cyber-border">
-                    <a
-                      href={`/admin/projects/${project.id}`}
-                      className="cyber-button py-1 px-3 text-xs"
-                    >
-                      编辑
-                    </a>
-                    <button
-                      onClick={() => deleteProject(project.id)}
-                      className="cyber-button py-1 px-3 text-xs"
-                      style={{ borderColor: 'var(--color-cyber-pink)', color: 'var(--color-cyber-pink)' }}
-                    >
-                      删除
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div className="flex gap-3 pt-2">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="cyber-button py-2 px-6 text-xs disabled:opacity-50"
+              >
+                {submitting ? '创建中...' : '创建项目'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowForm(false)
+                  setForm(emptyForm)
+                  setFormErrors({})
+                }}
+                className="cyber-button py-2 px-6 text-xs"
+                style={{ borderColor: 'var(--color-cyber-text-dim)', color: 'var(--color-cyber-text-dim)' }}
+              >
+                取消
+              </button>
             </div>
-          )}
+          </form>
         </div>
-      </main>
+      )}
+
+      {loading ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => <SkeletonCard key={i} />)}
+        </div>
+      ) : projects.length === 0 ? (
+        <div className="cyber-card p-12 text-center">
+          <p className="font-mono text-cyber-text-dim text-sm">暂无项目</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {projects.map((project) => (
+            <div key={project.id} className="cyber-card p-5 flex flex-col">
+              <div className="flex items-start justify-between mb-3">
+                <h3 className="font-display text-sm font-bold text-cyber-text leading-tight">
+                  {project.title}
+                </h3>
+                {project.featured && (
+                  <span className="cyber-tag cyber-tag-yellow flex-shrink-0 ml-2">★ 精选</span>
+                )}
+              </div>
+              <p className="text-cyber-text-dim text-xs leading-relaxed mb-3 flex-1 line-clamp-3">
+                {project.description}
+              </p>
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {project.techStack?.map((tech) => (
+                  <span key={tech} className="cyber-tag">{tech}</span>
+                ))}
+              </div>
+              <div className="flex items-center gap-2 pt-2 border-t border-cyber-border">
+                <a
+                  href={`/admin/projects/${project.id}`}
+                  className="cyber-button py-1 px-3 text-xs"
+                >
+                  编辑
+                </a>
+                <button
+                  onClick={() => deleteProject(project.id)}
+                  className="cyber-button py-1 px-3 text-xs"
+                  style={{ borderColor: 'var(--color-cyber-pink)', color: 'var(--color-cyber-pink)' }}
+                >
+                  删除
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
