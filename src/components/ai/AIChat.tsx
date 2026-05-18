@@ -7,6 +7,8 @@ interface Message {
   role: 'user' | 'assistant'
   content: string
   typing?: boolean
+  loading?: boolean
+  error?: boolean
 }
 
 const QUICK_ACTIONS = [
@@ -16,28 +18,12 @@ const QUICK_ACTIONS = [
   { label: '生成大纲', icon: '📋' },
 ]
 
-function getAIResponse(message: string): string {
-  const lower = message.toLowerCase()
-  if (lower.includes('总结') || lower.includes('摘要')) {
-    return '📝 这篇文章主要探讨了...（AI 功能开发中，即将支持智能摘要生成）'
-  }
-  if (lower.includes('推荐') || lower.includes('相关')) {
-    return '🔍 基于你的兴趣，推荐查看...（AI 功能开发中，即将支持智能推荐）'
-  }
-  if (lower.includes('代码') || lower.includes('解释')) {
-    return '💻 这段代码的核心逻辑是...（AI 功能开发中，即将支持代码解释）'
-  }
-  if (lower.includes('大纲') || lower.includes('目录')) {
-    return '📋 文章大纲如下...（AI 功能开发中，即将支持大纲生成）'
-  }
-  return '🤖 我是 CyberBlog AI 助手！目前我还在学习中，即将支持智能对话、文章摘要、代码解释等功能。敬请期待！'
-}
-
 export default function AIChat() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const rafRef = useRef<number | null>(null)
@@ -57,15 +43,14 @@ export default function AIChat() {
     }
   }, [])
 
-  function addMessage(role: 'user' | 'assistant', content: string, typing = false) {
+  function addMessage(role: 'user' | 'assistant', content: string, typing = false, loading = false, error = false) {
     const id = Date.now().toString() + Math.random().toString(36).slice(2)
-    setMessages(prev => [...prev, { id, role, content, typing }])
+    setMessages(prev => [...prev, { id, role, content, typing, loading, error }])
     return id
   }
 
-  function simulateTyping(fullText: string) {
+  function simulateTyping(fullText: string, msgId: string) {
     setIsTyping(true)
-    const msgId = addMessage('assistant', '', true)
     let charIndex = 0
     let lastUpdateTime = 0
     const minInterval = 30
@@ -78,7 +63,7 @@ export default function AIChat() {
         charIndex++
         setMessages(prev =>
           prev.map(m =>
-            m.id === msgId ? { ...m, content: fullText.slice(0, charIndex) } : m
+            m.id === msgId ? { ...m, content: fullText.slice(0, charIndex), loading: false } : m
           )
         )
         lastUpdateTime = timestamp
@@ -86,7 +71,7 @@ export default function AIChat() {
 
       if (charIndex >= fullText.length) {
         setMessages(prev =>
-          prev.map(m => (m.id === msgId ? { ...m, content: fullText, typing: false } : m))
+          prev.map(m => (m.id === msgId ? { ...m, content: fullText, typing: false, loading: false } : m))
         )
         setIsTyping(false)
         return
@@ -100,13 +85,66 @@ export default function AIChat() {
     }, 400)
   }
 
-  function handleSend(text?: string) {
+  function getContext(): string | undefined {
+    if (typeof window === 'undefined') return undefined
+    const pathname = window.location.pathname
+    if (pathname.includes('/posts/')) {
+      const h1 = document.querySelector('article h1')
+      const excerpt = document.querySelector('article p')
+      if (h1) {
+        let ctx = `文章标题：${h1.textContent}`
+        if (excerpt) ctx += `\n文章摘要：${excerpt.textContent?.slice(0, 200)}`
+        return ctx
+      }
+    }
+    return undefined
+  }
+
+  async function handleSend(text?: string) {
     const message = (text || input).trim()
-    if (!message || isTyping) return
+    if (!message || isTyping || isLoading) return
     setInput('')
     addMessage('user', message)
-    const response = getAIResponse(message)
-    simulateTyping(response)
+
+    const loadingId = addMessage('assistant', '', false, true)
+    setIsLoading(true)
+
+    try {
+      const context = getContext()
+      const res = await fetch('/api/ai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, context }),
+      })
+
+      const data = await res.json()
+
+      if (data.reply) {
+        setMessages(prev =>
+          prev.map(m => (m.id === loadingId ? { ...m, loading: false } : m))
+        )
+        simulateTyping(data.reply, loadingId)
+      } else {
+        const errorMsg = data.error || '未知错误'
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === loadingId
+              ? { ...m, content: errorMsg, typing: false, loading: false, error: true }
+              : m
+          )
+        )
+      }
+    } catch {
+      setMessages(prev =>
+        prev.map(m =>
+          m.id === loadingId
+            ? { ...m, content: '网络错误，请检查连接后重试', typing: false, loading: false, error: true }
+            : m
+        )
+      )
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -208,15 +246,18 @@ export default function AIChat() {
                     <button
                       key={action.label}
                       onClick={() => handleSend(action.label)}
-                      className="text-left px-3 py-2 rounded-sm text-xs font-mono transition-all duration-200 hover:scale-[1.02]"
+                      disabled={isLoading}
+                      className="text-left px-3 py-2 rounded-sm text-xs font-mono transition-all duration-200 hover:scale-[1.02] disabled:opacity-30"
                       style={{
                         background: 'var(--color-cyber-surface)',
                         border: '1px solid var(--color-cyber-border)',
                         color: 'var(--color-cyber-text-dim)',
                       }}
                       onMouseEnter={e => {
-                        e.currentTarget.style.borderColor = 'var(--color-cyber-neon)'
-                        e.currentTarget.style.color = 'var(--color-cyber-neon)'
+                        if (!isLoading) {
+                          e.currentTarget.style.borderColor = 'var(--color-cyber-neon)'
+                          e.currentTarget.style.color = 'var(--color-cyber-neon)'
+                        }
                       }}
                       onMouseLeave={e => {
                         e.currentTarget.style.borderColor = 'var(--color-cyber-border)'
@@ -237,9 +278,7 @@ export default function AIChat() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[85%] px-3 py-2 rounded-sm text-sm font-mono leading-relaxed break-words ${
-                    msg.role === 'user' ? '' : ''
-                  }`}
+                  className={`max-w-[85%] px-3 py-2 rounded-sm text-sm font-mono leading-relaxed break-words`}
                   style={
                     msg.role === 'user'
                       ? {
@@ -247,39 +286,34 @@ export default function AIChat() {
                           border: '1px solid rgba(0,255,159,0.3)',
                           color: 'var(--color-cyber-text)',
                         }
-                      : {
-                          background: 'var(--color-cyber-surface)',
-                          border: '1px solid var(--color-cyber-border)',
-                          color: 'var(--color-cyber-text-dim)',
-                        }
+                      : msg.error
+                        ? {
+                            background: 'rgba(255,0,128,0.08)',
+                            border: '1px solid rgba(255,0,128,0.3)',
+                            color: '#ff6699',
+                          }
+                        : {
+                            background: 'var(--color-cyber-surface)',
+                            border: '1px solid var(--color-cyber-border)',
+                            color: 'var(--color-cyber-text-dim)',
+                          }
                   }
                 >
-                  {msg.content}
-                  {msg.typing && (
+                  {msg.loading ? (
+                    <span className="flex gap-1">
+                      <span className="animate-bounce" style={{ animationDelay: '0ms' }}>●</span>
+                      <span className="animate-bounce" style={{ animationDelay: '150ms' }}>●</span>
+                      <span className="animate-bounce" style={{ animationDelay: '300ms' }}>●</span>
+                    </span>
+                  ) : (
+                    msg.content
+                  )}
+                  {msg.typing && !msg.loading && (
                     <span className="inline-block w-1.5 h-4 ml-0.5 align-middle animate-pulse" style={{ backgroundColor: 'var(--color-cyber-neon)' }} />
                   )}
                 </div>
               </div>
             ))}
-
-            {isTyping && messages[messages.length - 1]?.role !== 'assistant' && (
-              <div className="flex justify-start">
-                <div
-                  className="px-3 py-2 rounded-sm text-xs font-mono"
-                  style={{
-                    background: 'var(--color-cyber-surface)',
-                    border: '1px solid var(--color-cyber-border)',
-                    color: 'var(--color-cyber-text-dim)',
-                  }}
-                >
-                  <span className="flex gap-1">
-                    <span className="animate-bounce" style={{ animationDelay: '0ms' }}>●</span>
-                    <span className="animate-bounce" style={{ animationDelay: '150ms' }}>●</span>
-                    <span className="animate-bounce" style={{ animationDelay: '300ms' }}>●</span>
-                  </span>
-                </div>
-              </div>
-            )}
 
             <div ref={messagesEndRef} />
           </div>
@@ -290,7 +324,7 @@ export default function AIChat() {
                 <button
                   key={action.label}
                   onClick={() => handleSend(action.label)}
-                  disabled={isTyping}
+                  disabled={isTyping || isLoading}
                   className="shrink-0 px-2 py-1 rounded-sm text-[10px] font-mono transition-all duration-200 disabled:opacity-30"
                   style={{
                     background: 'var(--color-cyber-surface)',
@@ -298,7 +332,7 @@ export default function AIChat() {
                     color: 'var(--color-cyber-text-dim)',
                   }}
                   onMouseEnter={e => {
-                    if (!isTyping) {
+                    if (!isTyping && !isLoading) {
                       e.currentTarget.style.borderColor = 'var(--color-cyber-neon)'
                       e.currentTarget.style.color = 'var(--color-cyber-neon)'
                     }
@@ -325,12 +359,12 @@ export default function AIChat() {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="输入消息..."
-                disabled={isTyping}
+                disabled={isTyping || isLoading}
                 className="cyber-input flex-1 !py-2 !pl-3 text-sm"
               />
               <button
                 onClick={() => handleSend()}
-                disabled={!input.trim() || isTyping}
+                disabled={!input.trim() || isTyping || isLoading}
                 className="w-9 h-9 rounded-sm flex items-center justify-center transition-all duration-200 disabled:opacity-30"
                 style={{
                   background: 'linear-gradient(135deg, var(--color-cyber-neon), var(--color-cyber-blue))',
@@ -342,6 +376,9 @@ export default function AIChat() {
                 </svg>
               </button>
             </div>
+            <p className="font-mono text-[9px] mt-1.5 text-center" style={{ color: 'rgba(224,224,224,0.2)' }}>
+              Powered by DeepSeek
+            </p>
           </div>
         </div>
       </div>

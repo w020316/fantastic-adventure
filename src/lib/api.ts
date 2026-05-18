@@ -39,6 +39,7 @@ export async function fetchStats() {
 
 export async function likeArticle(id: string) {
   const res = await fetch(`${BASE}/api/articles/${id}/like`, { method: 'POST' })
+  if (!res.ok) throw new Error('点赞失败')
   return res.json()
 }
 
@@ -48,6 +49,10 @@ export async function submitComment(data: { content: string; nickname: string; e
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   })
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}))
+    throw new Error(body.error || '提交评论失败')
+  }
   return res.json()
 }
 

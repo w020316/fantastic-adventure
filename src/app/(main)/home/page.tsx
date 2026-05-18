@@ -39,10 +39,16 @@ function getReadingTime(content: string) {
 function useCountUp(target: number, duration = 1500) {
   const [count, setCount] = useState(0)
   useEffect(() => {
+    if (target <= 0) {
+      setCount(0)
+      return
+    }
     let start = 0
     const step = target / (duration / 16)
+    let cancelled = false
     const timer = setInterval(() => {
       start += step
+      if (cancelled) return
       if (start >= target) {
         setCount(target)
         clearInterval(timer)
@@ -50,7 +56,10 @@ function useCountUp(target: number, duration = 1500) {
         setCount(Math.floor(start))
       }
     }, 16)
-    return () => clearInterval(timer)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
   }, [target, duration])
   return count
 }
@@ -220,12 +229,14 @@ export default function HomePage() {
   const [projectsList, setProjectsList] = useState<Project[]>([])
   const [stats, setStats] = useState<{ totalViews: number; todayViews: number; articleCount: number; commentCount: number } | null>(null)
   const [tagsList, setTagsList] = useState<{ id: string | number; name: string; slug: string; count: number; createdAt: string }[]>([])
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
     setMounted(true)
   }, [])
 
   useEffect(() => {
+    const controller = new AbortController()
     async function loadData() {
       try {
         const [articlesRes, featuredRes, categoriesRes, projectsRes, statsRes, tagsRes] = await Promise.all([
@@ -236,6 +247,7 @@ export default function HomePage() {
           fetchStats(),
           fetchTags(),
         ])
+        if (controller.signal.aborted) return
         setArticlesList(articlesRes.articles || [])
         setFeaturedArticle(featuredRes.articles?.[0] || null)
         setCategoriesList(categoriesRes.categories || [])
@@ -243,12 +255,17 @@ export default function HomePage() {
         setStats(statsRes)
         setTagsList(tagsRes.tags || [])
       } catch (err) {
+        if (controller.signal.aborted) return
         console.error('Failed to load data:', err)
+        setLoadError(true)
       } finally {
-        setLoading(false)
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
       }
     }
     loadData()
+    return () => controller.abort()
   }, [])
 
   const filteredArticles = useMemo(() => {
@@ -288,6 +305,23 @@ export default function HomePage() {
               <div key={i} className="h-72 skeleton-pulse rounded-sm" />
             ))}
           </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (loadError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="font-display text-4xl font-bold neon-text-pink mb-4">ERROR</div>
+          <p className="font-mono text-cyber-text-dim text-sm mb-6">数据加载失败，请刷新页面重试</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="cyber-button px-6 py-2 text-xs"
+          >
+            刷新页面
+          </button>
         </div>
       </div>
     )

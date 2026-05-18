@@ -7,12 +7,15 @@ import { articleSchema } from '@/lib/validations'
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
-    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '10')))
+    const rawPage = parseInt(searchParams.get('page') || '1')
+    const rawLimit = parseInt(searchParams.get('limit') || '10')
+    const page = Math.max(1, Number.isNaN(rawPage) ? 1 : rawPage)
+    const limit = Math.min(50, Math.max(1, Number.isNaN(rawLimit) ? 10 : rawLimit))
     const category = searchParams.get('category')
     const tag = searchParams.get('tag')
     const search = searchParams.get('search')
-    const sort = searchParams.get('sort') === 'likes' ? 'likes' : 'publishedAt'
+    const allowedSorts = ['likes', 'publishedAt'] as const
+    const sort = allowedSorts.includes(searchParams.get('sort') as typeof allowedSorts[number]) ? (searchParams.get('sort') as typeof allowedSorts[number]) : 'publishedAt'
 
     const where: Record<string, unknown> = { status: 'PUBLISHED' }
 

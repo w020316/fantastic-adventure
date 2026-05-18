@@ -1,129 +1,165 @@
-import { Suspense } from 'react'
-import LandingClient from './landing-client'
-
 export default function LandingPage() {
   return (
     <>
       <noscript>
         <meta httpEquiv="refresh" content="0;url=/home" />
-        <style>{`body { margin: 0; background: #0a0a0f; color: #00ff9f; font-family: system-ui, -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; } a { color: #00ff9f; }`}</style>
-        <div style={{ textAlign: 'center', padding: '2rem' }}>
-          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>CYBERBLOG</h1>
-          <p style={{ opacity: 0.6, marginBottom: '1.5rem' }}>需要 JavaScript 才能获得完整体验</p>
-          <a href="/home" style={{ border: '1px solid #00ff9f', padding: '0.75rem 2rem', textDecoration: 'none', borderRadius: '4px' }}>
-            进入主页 →
-          </a>
-        </div>
       </noscript>
 
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes cyber-grid { 0% { transform: translate(0, 0); } 100% { transform: translate(20px, 20px); } }
-        .grid-bg {
-          background-image:
-            linear-gradient(rgba(0,255,159,.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,255,159,.03) 1px, transparent 1px);
-          background-size: 40px 40px;
-          animation: cyber-grid 8s linear infinite;
-        }
-      `}} />
-
       <div
-        className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden"
         style={{
-          backgroundColor: 'var(--color-cyber-bg, #0a0a0f)',
-          color: 'var(--color-cyber-text, #e0e0e0)',
-          fontFamily: 'var(--font-body), system-ui, -apple-system, sans-serif',
+          position: 'relative',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          minHeight: '100vh',
+          margin: 0,
+          padding: '2rem',
+          backgroundColor: '#0a0a0f',
+          color: '#e0e0e0',
+          fontFamily: 'monospace',
+          overflow: 'hidden',
         }}
       >
-        <div className="grid-bg absolute inset-0" />
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage:
+              'linear-gradient(rgba(0,255,159,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(0,255,159,0.03) 1px, transparent 1px)',
+            backgroundSize: '40px 40px',
+            pointerEvents: 'none',
+          }}
+        />
 
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute -top-1/2 -left-1/2 h-[200%] w-[200%] animate-spin" style={{ animationDuration: '120s' }}>
-            <div className="absolute top-1/4 left-1/4 h-px w-96 bg-gradient-to-r from-transparent via-cyber-neon/20 to-transparent rotate-45" />
-            <div className="absolute top-1/3 left-1/3 h-px w-80 bg-gradient-to-r from-transparent via-cyber-pink/15 to-transparent -rotate-12" />
-            <div className="absolute top-1/2 left-1/4 h-px w-72 bg-gradient-to-r from-transparent via-cyber-blue/10 to-transparent rotate-30" />
-          </div>
-        </div>
-
-        <div className="relative z-10 text-center px-4">
-          <div className="mb-6">
+        <div style={{ position: 'relative', zIndex: 1, textAlign: 'center' }}>
+          <div style={{ marginBottom: '1.5rem' }}>
             <span
-              className="inline-block font-mono text-xs tracking-[0.3em] border px-3 py-1 rounded-sm"
-              style={{ color: 'rgba(0,255,159,.6)', borderColor: 'rgba(0,255,159,.2)' }}
+              style={{
+                display: 'inline-block',
+                fontFamily: 'monospace',
+                fontSize: '11px',
+                letterSpacing: '0.3em',
+                color: 'rgba(0,255,159,0.6)',
+                border: '1px solid rgba(0,255,159,0.2)',
+                padding: '4px 12px',
+              }}
             >
               SYSTEM.ONLINE
             </span>
           </div>
 
           <h1
-            className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold mb-4 leading-none"
             style={{
-              fontFamily: 'var(--font-display), Orbitron, system-ui, sans-serif',
+              fontSize: 'clamp(3rem, 12vw, 8rem)',
+              fontWeight: 700,
+              lineHeight: 1,
+              marginBottom: '1rem',
               color: '#e0e0e0',
-              textShadow: '0 0 10px rgba(0,255,159,.3), 0 0 40px rgba(0,255,159,.1)',
+              textShadow: '0 0 10px rgba(0,255,159,0.3), 0 0 40px rgba(0,255,159,0.1)',
+              fontFamily: 'monospace',
             }}
           >
             CYBERBLOG
           </h1>
 
-          <p className="font-mono text-sm sm:text-base tracking-[0.2em] mb-2" style={{ color: 'rgba(224,224,224,.5)' }}>
+          <p
+            style={{
+              fontFamily: 'monospace',
+              fontSize: '14px',
+              letterSpacing: '0.2em',
+              color: 'rgba(224,224,224,0.5)',
+              marginBottom: '0.5rem',
+            }}
+          >
             {'// 赛博朋克个人博客系统'}
           </p>
 
-          <div className="flex items-center justify-center gap-2 mb-12">
-            <span className="h-px w-12 bg-gradient-to-r from-transparent to-cyber-neon/50" />
-            <span className="w-1.5 h-1.5 bg-cyber-neon rounded-full animate-pulse" />
-            <span className="h-px w-12 bg-gradient-to-l from-transparent to-cyber-neon/50" />
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              marginBottom: '3rem',
+            }}
+          >
+            <span style={{ display: 'inline-block', width: '48px', height: '1px', background: 'linear-gradient(to right, transparent, rgba(0,255,159,0.5))' }} />
+            <span style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#00ff9f' }} />
+            <span style={{ display: 'inline-block', width: '48px', height: '1px', background: 'linear-gradient(to left, transparent, rgba(0,255,159,0.5))' }} />
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'row',
+              gap: '1rem',
+              justifyContent: 'center',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
             <a
               href="/home"
-              className="group flex items-center gap-3 px-8 py-3 text-sm font-mono tracking-wider border rounded-sm transition-all duration-300 hover:shadow-lg hover:shadow-cyber-neon/10"
-              style={{ borderColor: '#00ff9f', color: '#00ff9f' }}
+              style={{
+                display: 'inline-block',
+                border: '1px solid #00ff9f',
+                color: '#00ff9f',
+                padding: '12px 32px',
+                fontFamily: 'monospace',
+                fontSize: '14px',
+                letterSpacing: '0.1em',
+                textDecoration: 'none',
+                transition: 'all 0.3s',
+              }}
             >
-              <span className="w-2 h-2 bg-cyber-neon rounded-full group-hover:animate-pulse" />
               浏览文章
-              <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
             </a>
-
             <a
               href="/about"
-              className="group flex items-center gap-3 px-8 py-3 text-sm font-mono tracking-wider border rounded-sm transition-all duration-300 hover:shadow-lg hover:shadow-cyber-pink/10"
-              style={{ borderColor: '#ff0080', color: '#ff0080' }}
+              style={{
+                display: 'inline-block',
+                border: '1px solid #ff0080',
+                color: '#ff0080',
+                padding: '12px 32px',
+                fontFamily: 'monospace',
+                fontSize: '14px',
+                letterSpacing: '0.1em',
+                textDecoration: 'none',
+                transition: 'all 0.3s',
+              }}
             >
-              <span className="w-2 h-2 bg-cyber-pink rounded-full group-hover:animate-pulse" />
               了解更多
-              <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-              </svg>
             </a>
           </div>
 
-          <div className="mt-16 font-mono text-xs space-y-1" style={{ color: 'rgba(224,224,224,.25)' }}>
-            <p>{'>'} NEXT.JS 16 · PRISMA 6 · TAILWIND CSS 4</p>
-            <p>{'>'} V6.0.0_BUILD.2026.05.18</p>
+          <div style={{ marginTop: '4rem', fontFamily: 'monospace', fontSize: '12px', color: 'rgba(224,224,224,0.25)' }}>
+            <p style={{ margin: '4px 0' }}>{'>'} NEXT.JS 16 · PRISMA 6</p>
+            <p style={{ margin: '4px 0' }}>{'>'} V6.0.0_BUILD.2026</p>
           </div>
         </div>
 
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-neon/30 to-transparent" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-pink/20 to-transparent" />
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '1px',
+            background: 'linear-gradient(to right, transparent, rgba(0,255,159,0.3), transparent)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '1px',
+            background: 'linear-gradient(to right, transparent, rgba(255,0,128,0.2), transparent)',
+          }}
+        />
       </div>
-
-      <Suspense
-        fallback={
-          <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ backgroundColor: '#0a0a0f' }}>
-            <div className="text-center">
-              <div className="font-mono text-xs mb-4 animate-pulse" style={{ color: 'rgba(0,255,159,.6)' }}>{'> LOADING...'}</div>
-              <div className="w-48 h-px mx-auto rounded" style={{ backgroundColor: 'rgba(0,255,159,.2)' }} />
-            </div>
-          </div>
-        }
-      >
-        <LandingClient />
-      </Suspense>
     </>
   )
 }

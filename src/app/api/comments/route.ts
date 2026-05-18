@@ -7,10 +7,21 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 const RATE_LIMIT_WINDOW = 60 * 1000
 const RATE_LIMIT_MAX = 5
+const RATE_LIMIT_CLEANUP_INTERVAL = 5 * 60 * 1000
+let lastCleanup = Date.now()
 
 function checkRateLimit(ip: string | null): boolean {
-  const key = ip || 'unknown'
   const now = Date.now()
+  if (now - lastCleanup > RATE_LIMIT_CLEANUP_INTERVAL) {
+    for (const [key, entry] of rateLimitMap) {
+      if (now > entry.resetTime) {
+        rateLimitMap.delete(key)
+      }
+    }
+    lastCleanup = now
+  }
+
+  const key = ip || 'unknown'
   const entry = rateLimitMap.get(key)
   if (!entry || now > entry.resetTime) {
     rateLimitMap.set(key, { count: 1, resetTime: now + RATE_LIMIT_WINDOW })
@@ -19,6 +30,12 @@ function checkRateLimit(ip: string | null): boolean {
   if (entry.count >= RATE_LIMIT_MAX) return false
   entry.count++
   return true
+}
+
+function sanitizeText(text: string): string {
+  return text
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
 }
 
 export async function GET(request: NextRequest) {
@@ -34,6 +51,7 @@ export async function GET(request: NextRequest) {
     if (articleId) where.articleId = articleId
     if (status && isAdmin) where.status = status
     if (!isAdmin) where.status = 'APPROVED'
+    if (!isAdmin) where.parentId = null
 
     const comments = await prisma.comment.findMany({
       where,
@@ -66,18 +84,10 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const validated = commentSchema.parse(body)
 
-    if ((validated.content?.length || 0) > 2000) {
-      return NextResponse.json({ error: '评论内容过长，最多2000字' }, { status: 400 })
-    }
-
-    if ((validated.nickname?.length || 0) > 50) {
-      return NextResponse.json({ error: '昵称过长，最多50个字符' }, { status: 400 })
-    }
-
     const comment = await prisma.comment.create({
       data: {
-        content: validated.content,
-        nickname: validated.nickname,
+        content: sanitizeText(validated.content),
+        nickname: sanitizeText(validated.nickname),
         email: validated.email || null,
         articleId: validated.articleId,
         parentId: validated.parentId || null,

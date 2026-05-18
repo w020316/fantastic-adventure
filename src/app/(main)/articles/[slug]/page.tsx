@@ -428,37 +428,46 @@ export default function ArticleDetailPage() {
   const [relatedArticles, setRelatedArticles] = useState<ArticleListItem[]>([])
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
+  const [loadError, setLoadError] = useState(false)
 
   useEffect(() => {
+    const controller = new AbortController()
     async function load() {
       try {
         setLoading(true)
-        const data = await fetchArticles()
-        const found = data.articles.find((a: ArticleListItem) => a.slug === slug)
-        if (!found) {
+        setNotFound(false)
+        setLoadError(false)
+        const detail = await fetchArticle(slug)
+        if (controller.signal.aborted) return
+        if (!detail || detail.error) {
           setNotFound(true)
           return
         }
-        const detail = await fetchArticle(found.id)
         setArticle(detail)
-        const related = data.articles
-          .filter((a: ArticleListItem) => a.id !== found.id && a.category?.slug === found.category?.slug)
+        const data = await fetchArticles()
+        if (controller.signal.aborted) return
+        const related = (data.articles || [])
+          .filter((a: ArticleListItem) => a.id !== detail.id && a.category?.slug === detail.category?.slug)
           .slice(0, 2)
         setRelatedArticles(related)
       } catch {
-        setNotFound(true)
+        if (controller.signal.aborted) return
+        setLoadError(true)
       } finally {
-        setLoading(false)
+        if (!controller.signal.aborted) {
+          setLoading(false)
+        }
       }
     }
     load()
+    return () => controller.abort()
   }, [slug])
 
   if (loading) {
     return <ArticleSkeleton />
   }
 
-  if (notFound || !article) {
+  if (notFound || (!loading && !article)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -467,6 +476,23 @@ export default function ArticleDetailPage() {
           <Link href="/articles" className="cyber-button px-6 py-2 text-xs">
             返回文章列表
           </Link>
+        </div>
+      </div>
+    )
+  }
+
+  if (loadError || !article) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="font-display text-4xl font-bold neon-text-pink mb-4">ERROR</div>
+          <p className="font-mono text-cyber-text-dim text-sm mb-6">文章加载失败，请稍后重试</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="cyber-button px-6 py-2 text-xs"
+          >
+            刷新页面
+          </button>
         </div>
       </div>
     )

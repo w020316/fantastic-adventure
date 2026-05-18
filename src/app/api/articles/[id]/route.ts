@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { articleSchema } from '@/lib/validations'
+import { requireAdmin } from '@/lib/auth-guard'
 
 export async function GET(
   _request: NextRequest,
@@ -10,31 +9,40 @@ export async function GET(
 ) {
   try {
     const { id } = await params
-    const article = await prisma.article.findUnique({
-      where: { id },
-      include: {
-        author: { select: { id: true, name: true } },
-        category: true,
-        tags: { include: { tag: true } },
-        comments: {
-          where: { status: 'APPROVED', parentId: null },
-          include: {
-            replies: {
-              where: { status: 'APPROVED' },
-              orderBy: { createdAt: 'asc' },
-            },
+    const articleInclude = {
+      author: { select: { id: true, name: true } },
+      category: true,
+      tags: { include: { tag: true } },
+      comments: {
+        where: { status: 'APPROVED', parentId: null },
+        include: {
+          replies: {
+            where: { status: 'APPROVED' },
+            orderBy: { createdAt: 'asc' },
           },
-          orderBy: { createdAt: 'desc' },
         },
+        orderBy: { createdAt: 'desc' },
       },
+    } as const
+
+    let article = await prisma.article.findUnique({
+      where: { id },
+      include: articleInclude,
     })
+
+    if (!article) {
+      article = await prisma.article.findUnique({
+        where: { slug: id },
+        include: articleInclude,
+      })
+    }
 
     if (!article) {
       return NextResponse.json({ error: '文章未找到' }, { status: 404 })
     }
 
     await prisma.article.update({
-      where: { id },
+      where: { id: article.id },
       data: { views: { increment: 1 } },
     })
 
@@ -53,10 +61,8 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user || (session.user as { role?: string }).role !== 'ADMIN') {
-      return NextResponse.json({ error: '权限不足' }, { status: 403 })
-    }
+    const authError = await requireAdmin()
+    if (authError) return authError
 
     const { id } = await params
     const body = await request.json()
@@ -106,12 +112,15 @@ export async function DELETE(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user || (session.user as { role?: string }).role !== 'ADMIN') {
-      return NextResponse.json({ error: '权限不足' }, { status: 403 })
-    }
+    const authError = await requireAdmin()
+    if (authError) return authError
 
     const { id } = await params
+    const existing = await prisma.article.findUnique({ where: { id } })
+    if (!existing) {
+      return NextResponse.json({ error: '文章未找到' }, { status: 404 })
+    }
+
     await prisma.article.delete({ where: { id } })
     return NextResponse.json({ message: '文章已删除' })
   } catch (error) {
