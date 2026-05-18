@@ -1,1 +1,0 @@
-{"framework": null, "rootDirectory": "..", "installCommand": "npm install", "buildCommand": "npm run build:shared && npm run build:client", "outputDirectory": "client/dist", "rewrites": [{"source": "/(.*)", "destination": "/index.html"}]}

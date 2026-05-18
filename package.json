@@ -1,23 +1,38 @@
 {
-  "name": "grbk",
-  "version": "1.0.0",
+  "name": "cyberblog-temp",
+  "version": "0.1.0",
   "private": true,
-  "workspaces": [
-    "client",
-    "admin",
-    "server",
-    "shared"
-  ],
   "scripts": {
-    "dev:client": "npm run dev --workspace=client",
-    "dev:admin": "npm run dev --workspace=admin",
-    "dev:server": "npm run dev --workspace=server",
-    "build:shared": "npm run build --workspace=shared",
-    "build:client": "npm run build --workspace=client",
-    "build:admin": "npm run build --workspace=admin",
-    "build:server": "npm run build --workspace=server",
-    "build": "npm run build:shared && npm run build:server && npm run build:client && npm run build:admin",
-    "lint": "eslint . --ext .ts,.vue",
-    "lint:fix": "eslint . --ext .ts,.vue --fix"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
+    "framer-motion": "^12.38.0",
+    "next": "16.2.6",
+    "next-auth": "^4.24.14",
+    "prisma": "^6.19.3",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-markdown": "^10.1.0",
+    "rehype-highlight": "^7.0.2",
+    "rehype-slug": "^6.0.0",
+    "remark-gfm": "^4.0.1",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
+    "eslint": "^9",
+    "eslint-config-next": "16.2.6",
+    "tailwindcss": "^4",
+    "typescript": "^5"
   }
 }
