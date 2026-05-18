@@ -343,7 +343,7 @@ export default function HomePage() {
           </div>
 
           {/* Stats */}
-          <div className="flex gap-3 sm:gap-4 justify-center max-w-lg mx-auto" style={{ animation: 'fadeInUp 0.6s ease 0.3s forwards', opacity: 0 }}>
+          <div className="flex flex-wrap gap-3 sm:gap-4 justify-center max-w-lg mx-auto" style={{ animation: 'fadeInUp 0.6s ease 0.3s forwards', opacity: 0 }}>
             <StatCard label="篇文章" value={stats?.articleCount || 0} suffix="" color="#00ff9f" />
             <StatCard label="条评论" value={stats?.commentCount || 0} suffix="" color="#ff0080" />
             <StatCard label="次浏览" value={stats?.totalViews || 0} suffix="" color="#00d4ff" />

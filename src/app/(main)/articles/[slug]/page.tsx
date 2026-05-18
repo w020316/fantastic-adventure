@@ -260,7 +260,7 @@ function CommentSection({ articleId, initialComments }: { articleId: string; ini
               id="comment-content"
               placeholder="写下你的评论... *"
               className="cyber-input text-xs py-2 resize-none"
-              style={{ paddingLeft: '1rem', minHeight: '80px' }}
+              style={{ paddingLeft: '1rem', minHeight: '100px' }}
               value={content}
               onChange={(e) => setContent(e.target.value)}
               required

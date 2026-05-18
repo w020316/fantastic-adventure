@@ -330,6 +330,54 @@
     display: none;
   }
 
+  .cyber-tag-lang {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.15rem 0.6rem;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    border: 1px solid var(--color-cyber-border);
+    border-radius: 2px;
+    color: var(--color-cyber-text-dim);
+  }
+
+  .cyber-tag-lang::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .repo-card {
+    background: var(--color-cyber-surface);
+    border: 1px solid var(--color-cyber-border);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  .repo-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+  }
+
+  .repo-card:hover {
+    transform: translateY(-2px);
+  }
+
+  .repo-card:hover::before {
+    opacity: 1;
+  }
+
   .skeleton-pulse {
     background: linear-gradient(
       90deg,
@@ -586,3 +634,19 @@
 .hljs-variable,
 .hljs-params { color: var(--color-cyber-text); }
 .hljs-meta { color: var(--color-cyber-text-dim); }
+
+@media (max-width: 640px) {
+  .cyber-card:hover {
+    transform: none;
+  }
+
+  .cyber-button:active {
+    transform: scale(0.98);
+  }
+}
+
+@layer base {
+  main {
+    min-height: 100vh;
+  }
+}
