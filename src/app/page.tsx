@@ -1,64 +1,28 @@
-'use client'
-
-import { useState, useEffect, useCallback, useRef } from 'react'
-import { useRouter } from 'next/navigation'
-import ParticleIntro from '@/components/animation/ParticleIntro'
+import { Suspense } from 'react'
+import LandingClient from './landing-client'
 
 export default function LandingPage() {
-  const [showIntro, setShowIntro] = useState(false)
-  const [entered, setEntered] = useState(false)
-  const router = useRouter()
-  const introSkippedRef = useRef(false)
-
-  useEffect(() => {
-    if (!sessionStorage.getItem('cyberblog-intro-shown')) {
-      setShowIntro(true)
-    }
-  }, [])
-
-  const handleIntroComplete = useCallback(() => {
-    if (introSkippedRef.current) return
-    introSkippedRef.current = true
-    sessionStorage.setItem('cyberblog-intro-shown', '1')
-    setShowIntro(false)
-  }, [])
-
-  useEffect(() => {
-    if (!showIntro) return
-    const timeout = setTimeout(() => {
-      handleIntroComplete()
-    }, 5000)
-    return () => clearTimeout(timeout)
-  }, [showIntro, handleIntroComplete])
-
-  function handleEnter(target: string) {
-    setEntered(true)
-    setTimeout(() => {
-      router.push(target)
-    }, 600)
-  }
-
   return (
     <>
-      {showIntro && <ParticleIntro onComplete={handleIntroComplete} />}
-
-      {showIntro && (
-        <button
-          onClick={handleIntroComplete}
-          className="fixed bottom-6 right-6 z-[60] font-mono text-xs tracking-wider text-cyber-text-dim/70 border border-cyber-border/50 px-4 py-2 rounded-sm hover:border-cyber-neon hover:text-cyber-neon transition-all duration-300 backdrop-blur-sm bg-cyber-bg/50"
-        >
-          跳过动画 →
-        </button>
-      )}
+      <noscript>
+        <meta httpEquiv="refresh" content="0;url=/home" />
+        <style>{`body { margin: 0; background: #0a0a0f; color: #00ff9f; font-family: system-ui, -apple-system, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; } a { color: #00ff9f; }`}</style>
+        <div style={{ textAlign: 'center', padding: '2rem' }}>
+          <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>CYBERBLOG</h1>
+          <p style={{ opacity: 0.6, marginBottom: '1.5rem' }}>需要 JavaScript 才能获得完整体验</p>
+          <a href="/home" style={{ border: '1px solid #00ff9f', padding: '0.75rem 2rem', textDecoration: 'none', borderRadius: '4px' }}>
+            进入主页 →
+          </a>
+        </div>
+      </noscript>
 
       <div
-        className={`relative flex min-h-screen flex-col items-center justify-center overflow-hidden transition-all duration-700 ${
-          entered ? 'scale-105 opacity-0 blur-sm' : 'scale-100 opacity-100 blur-0'
-        }`}
+        className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden"
+        style={{ backgroundColor: 'var(--color-cyber-bg, #0a0a0f)' }}
       >
         <div className="grid-bg absolute inset-0" />
 
-        <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
           <div className="absolute -top-1/2 -left-1/2 h-[200%] w-[200%] animate-spin" style={{ animationDuration: '120s' }}>
             <div className="absolute top-1/4 left-1/4 h-px w-96 bg-gradient-to-r from-transparent via-cyber-neon/20 to-transparent rotate-45" />
             <div className="absolute top-1/3 left-1/3 h-px w-80 bg-gradient-to-r from-transparent via-cyber-pink/15 to-transparent -rotate-12" />
@@ -74,8 +38,8 @@ export default function LandingPage() {
           </div>
 
           <h1
-            className="glitch-text font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold neon-text mb-4 leading-none"
-            data-text="CYBERBLOG"
+            className="font-display text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-bold neon-text mb-4 leading-none"
+            style={{ fontFamily: 'var(--font-display), Orbitron, system-ui, sans-serif' }}
           >
             CYBERBLOG
           </h1>
@@ -91,8 +55,8 @@ export default function LandingPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <button
-              onClick={() => handleEnter('/home')}
+            <a
+              href="/home"
               className="cyber-button group flex items-center gap-3 px-8 py-3 text-sm"
             >
               <span className="w-2 h-2 bg-cyber-neon rounded-full group-hover:animate-pulse" />
@@ -100,10 +64,10 @@ export default function LandingPage() {
               <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
-            </button>
+            </a>
 
-            <button
-              onClick={() => handleEnter('/about')}
+            <a
+              href="/about"
               className="cyber-button group flex items-center gap-3 px-8 py-3 text-sm"
               style={{ borderColor: 'var(--color-cyber-pink)', color: 'var(--color-cyber-pink)' }}
             >
@@ -112,7 +76,7 @@ export default function LandingPage() {
               <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
               </svg>
-            </button>
+            </a>
           </div>
 
           <div className="mt-16 font-mono text-xs text-cyber-text-dim/40 space-y-1">
@@ -124,6 +88,10 @@ export default function LandingPage() {
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-neon/30 to-transparent" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-cyber-pink/20 to-transparent" />
       </div>
+
+      <Suspense fallback={null}>
+        <LandingClient />
+      </Suspense>
     </>
   )
 }

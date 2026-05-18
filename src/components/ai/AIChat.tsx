@@ -40,6 +40,7 @@ export default function AIChat() {
   const [isTyping, setIsTyping] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const rafRef = useRef<number | null>(null)
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -52,6 +53,7 @@ export default function AIChat() {
   useEffect(() => {
     return () => {
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current)
+      if (rafRef.current) cancelAnimationFrame(rafRef.current)
     }
   }, [])
 
@@ -65,8 +67,23 @@ export default function AIChat() {
     setIsTyping(true)
     const msgId = addMessage('assistant', '', true)
     let charIndex = 0
+    let lastUpdateTime = 0
+    const minInterval = 30
 
-    function typeChar() {
+    function typeFrame(timestamp: number) {
+      if (!lastUpdateTime) lastUpdateTime = timestamp
+
+      const elapsed = timestamp - lastUpdateTime
+      if (elapsed >= minInterval && charIndex < fullText.length) {
+        charIndex++
+        setMessages(prev =>
+          prev.map(m =>
+            m.id === msgId ? { ...m, content: fullText.slice(0, charIndex) } : m
+          )
+        )
+        lastUpdateTime = timestamp
+      }
+
       if (charIndex >= fullText.length) {
         setMessages(prev =>
           prev.map(m => (m.id === msgId ? { ...m, content: fullText, typing: false } : m))
@@ -74,16 +91,13 @@ export default function AIChat() {
         setIsTyping(false)
         return
       }
-      charIndex++
-      setMessages(prev =>
-        prev.map(m =>
-          m.id === msgId ? { ...m, content: fullText.slice(0, charIndex) } : m
-        )
-      )
-      typingTimerRef.current = setTimeout(typeChar, 30 + Math.random() * 30)
+
+      rafRef.current = requestAnimationFrame(typeFrame)
     }
 
-    typingTimerRef.current = setTimeout(typeChar, 400)
+    typingTimerRef.current = setTimeout(() => {
+      rafRef.current = requestAnimationFrame(typeFrame)
+    }, 400)
   }
 
   function handleSend(text?: string) {
@@ -106,7 +120,7 @@ export default function AIChat() {
     <>
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className={`fixed bottom-20 right-4 z-50 w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:rotate-45 ${
+        className={`fixed bottom-20 right-4 z-[9999] w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:rotate-45 ${
           isOpen ? 'rotate-45 scale-90' : 'animate-pulse'
         }`}
         style={{
@@ -138,7 +152,7 @@ export default function AIChat() {
       </button>
 
       <div
-        className={`fixed z-50 transition-all duration-300 ease-out ${
+        className={`fixed z-[9998] transition-all duration-300 ease-out ${
           isOpen
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-4 pointer-events-none'
@@ -223,7 +237,7 @@ export default function AIChat() {
                 className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
                 <div
-                  className={`max-w-[85%] px-3 py-2 rounded-sm text-sm font-mono leading-relaxed ${
+                  className={`max-w-[85%] px-3 py-2 rounded-sm text-sm font-mono leading-relaxed break-words ${
                     msg.role === 'user' ? '' : ''
                   }`}
                   style={

@@ -160,7 +160,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
     >
       <div className={`relative h-32 bg-gradient-to-br ${gradient} flex items-center justify-center`}>
         {project.coverImage ? (
-          <img src={project.coverImage} alt={project.title} className="absolute inset-0 w-full h-full object-cover opacity-60" />
+          <img src={project.coverImage} alt={project.title} className="absolute inset-0 w-full h-full object-cover opacity-60" width={400} height={200} />
         ) : null}
         <span className="font-display text-2xl font-bold text-white/20 group-hover:text-white/40 transition-colors relative z-10">
           {project.title}

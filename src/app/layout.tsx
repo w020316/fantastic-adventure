@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter, JetBrains_Mono } from 'next/font/google'
+import { Inter, JetBrains_Mono, Orbitron } from 'next/font/google'
 import './globals.css'
 
 const inter = Inter({
@@ -10,6 +10,12 @@ const inter = Inter({
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
+})
+
+const orbitron = Orbitron({
+  subsets: ['latin'],
+  variable: '--font-display',
+  display: 'swap',
 })
 
 export const metadata: Metadata = {
@@ -36,13 +42,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="zh-CN" className="dark">
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className={`${inter.variable} ${jetbrainsMono.variable} font-body antialiased`}>
+      <body className={`${inter.variable} ${jetbrainsMono.variable} ${orbitron.variable} font-body antialiased`}>
         <div className="grid-bg min-h-screen">
           {children}
         </div>

@@ -187,7 +187,7 @@ async function main() {
   console.log('✅ 项目:', projectsData.length)
 
   console.log('🎉 种子数据完成!')
-  console.log('📧 管理员: admin@cyberblog.dev / admin123')
+  console.log('📧 管理员:', admin.email, '/ 密码已设置 (请查看 .env 或使用默认密码)')
 }
 
 main()

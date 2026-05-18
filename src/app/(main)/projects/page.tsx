@@ -393,41 +393,40 @@ function ContributionGraph({ repos }: { repos: GitHubRepo[] }) {
           ))}
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div className="flex gap-[2px] mb-1 h-4">
-            {monthLabels.map(({ text, weekIndex }) => (
-              <span
-                key={weekIndex}
-                className="font-mono text-[9px] text-cyber-text-dim/50"
-                style={{
-                  marginLeft: weekIndex === 0 ? 0 : undefined,
-                  position: 'relative',
-                  left: `${(weekIndex / weeks) * 100}%`,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {text}
-              </span>
-            ))}
-          </div>
+        <div className="flex-1 min-w-0 overflow-hidden">
+            <div className="flex gap-[2px] mb-1 h-4 items-end">
+              {monthLabels.map(({ text, weekIndex }) => (
+                <span
+                  key={weekIndex}
+                  className="font-mono text-[9px] text-cyber-text-dim/50 shrink-0"
+                  style={{
+                    width: `${100 / weeks}%`,
+                    paddingLeft: weekIndex === 0 ? '0' : undefined,
+                    textAlign: 'left',
+                  }}
+                >
+                  {text}
+                </span>
+              ))}
+            </div>
 
-          <div className="flex gap-[3px]">
-            {activityData.map((week, wi) => (
-              <div key={wi} className="flex flex-col gap-[3px]">
-                {week.map((count, di) => (
-                  <div
-                    key={di}
-                    className="w-[13px] h-[13px] rounded-[2px] transition-all duration-200 hover:scale-125 hover:z-10 cursor-default"
-                    style={{
-                      backgroundColor: getColor(count),
-                      boxShadow: count >= 3 ? `0 0 4px ${neonColors[4]}40` : count >= 2 ? `0 0 3px ${neonColors[3]}30` : 'none',
-                    }}
-                    title={`${count} 次贡献`}
-                  />
-                ))}
-              </div>
-            ))}
-          </div>
+            <div className="flex gap-[3px] overflow-x-auto">
+              {activityData.map((week, wi) => (
+                <div key={wi} className="flex flex-col gap-[3px] shrink-0">
+                  {week.map((count, di) => (
+                    <div
+                      key={di}
+                      className="w-[13px] h-[13px] rounded-[2px] transition-all duration-200 hover:scale-125 hover:z-10 cursor-default flex-shrink-0"
+                      style={{
+                        backgroundColor: getColor(count),
+                        boxShadow: count >= 3 ? `0 0 4px ${neonColors[4]}40` : count >= 2 ? `0 0 3px ${neonColors[3]}30` : 'none',
+                      }}
+                      title={`${count} 次贡献`}
+                    />
+                  ))}
+                </div>
+              ))}
+            </div>
         </div>
       </div>
 
