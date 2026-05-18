@@ -30,6 +30,20 @@ interface Article {
   category: { name: string; slug: string } | null
 }
 
+interface CategoryWithCount {
+  id: string
+  name: string
+  slug: string
+  count: number
+}
+
+const categoryColorValue: Record<string, string> = {
+  tech: '#00ff9f',
+  life: '#ff0080',
+  works: '#00d4ff',
+  essay: '#ffd700',
+}
+
 function SkeletonBlock({ className }: { className?: string }) {
   return <div className={`skeleton-pulse rounded ${className ?? ''}`} />
 }
@@ -62,11 +76,26 @@ function ListSkeleton({ rows = 5 }: { rows?: number }) {
   )
 }
 
+function BarChartSkeleton() {
+  return (
+    <div className="space-y-3">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3">
+          <SkeletonBlock className="h-3 w-16" />
+          <SkeletonBlock className="h-4 flex-1" />
+          <SkeletonBlock className="h-3 w-8" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function AdminDashboardPage() {
   const { status } = useSession()
   const [stats, setStats] = useState<Stats | null>(null)
   const [comments, setComments] = useState<Comment[]>([])
   const [articles, setArticles] = useState<Article[]>([])
+  const [categories, setCategories] = useState<CategoryWithCount[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -74,10 +103,11 @@ export default function AdminDashboardPage() {
 
     async function fetchData() {
       try {
-        const [statsRes, commentsRes, articlesRes] = await Promise.all([
+        const [statsRes, commentsRes, articlesRes, categoriesRes] = await Promise.all([
           fetch('/api/stats'),
           fetch('/api/comments?status=PENDING'),
           fetch('/api/articles?limit=5'),
+          fetch('/api/categories'),
         ])
 
         if (statsRes.ok) {
@@ -92,6 +122,10 @@ export default function AdminDashboardPage() {
           const articlesData = await articlesRes.json()
           setArticles(articlesData.articles ?? [])
         }
+        if (categoriesRes.ok) {
+          const categoriesData = await categoriesRes.json()
+          setCategories(categoriesData.categories ?? [])
+        }
       } catch {
       } finally {
         setLoading(false)
@@ -100,6 +134,8 @@ export default function AdminDashboardPage() {
 
     fetchData()
   }, [status])
+
+  const maxCount = Math.max(...categories.map((c) => c.count), 1)
 
   const statCards = [
     { label: '文章数', value: stats?.articleCount ?? 0, color: 'cyber-neon', cardClass: '', icon: '▤' },
@@ -162,7 +198,7 @@ export default function AdminDashboardPage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="cyber-card p-5" style={{ animation: 'fadeInUp 0.4s ease 0.3s forwards', opacity: 0 }}>
               <div className="section-title">
                 <span className="neon-text-pink">▸</span> 待审核评论
@@ -226,6 +262,35 @@ export default function AdminDashboardPage() {
               ) : (
                 <div className="text-center py-8">
                   <p className="font-mono text-xs text-cyber-text-dim">{'// 暂无文章'}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="cyber-card p-5" style={{ animation: 'fadeInUp 0.4s ease 0.5s forwards', opacity: 0 }}>
+              <div className="section-title">
+                <span className="neon-text">▸</span> 分类分布
+              </div>
+              {categories.length > 0 ? (
+                <div className="space-y-1">
+                  {categories.map((cat) => (
+                    <div key={cat.id} className="flex items-center gap-3 mb-3">
+                      <span className="font-mono text-xs text-cyber-text-dim w-16 shrink-0 truncate">{cat.name}</span>
+                      <div className="flex-1 h-4 bg-cyber-border rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-1000"
+                          style={{
+                            width: `${Math.max(5, (cat.count / maxCount) * 100)}%`,
+                            backgroundColor: categoryColorValue[cat.slug] || '#00ff9f',
+                          }}
+                        />
+                      </div>
+                      <span className="font-mono text-xs text-cyber-text-dim w-8 text-right">{cat.count}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="font-mono text-xs text-cyber-text-dim">{'// 暂无分类'}</p>
                 </div>
               )}
             </div>

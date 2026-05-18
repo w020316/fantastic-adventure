@@ -3,10 +3,12 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const navItems = [
   { href: '/home', label: '首页' },
   { href: '/articles', label: '文章' },
+  { href: '/bookmarks', label: '书签' },
   { href: '/projects', label: '作品集' },
   { href: '/about', label: '关于' },
 ]
@@ -74,27 +76,31 @@ export default function Header() {
                 </Link>
               )
             })}
+            <ThemeToggle />
           </nav>
 
-          <button
-            className="md:hidden text-cyber-neon p-2"
-            onClick={() => setMobileOpen(!mobileOpen)}
-            aria-label={mobileOpen ? '关闭菜单' : '打开菜单'}
-            aria-expanded={mobileOpen}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              {mobileOpen ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle />
+            <button
+              className="text-cyber-neon p-2 min-w-[44px] min-h-[44px] flex items-center justify-center"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label={mobileOpen ? '关闭菜单' : '打开菜单'}
+              aria-expanded={mobileOpen}
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                {mobileOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div
           className={`md:hidden overflow-hidden transition-all duration-300 ease-in-out ${
-            mobileOpen ? 'max-h-64 opacity-100' : 'max-h-0 opacity-0'
+            mobileOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
           <div className="glass-panel border-t border-cyber-border">
@@ -105,7 +111,7 @@ export default function Header() {
                   key={item.href}
                   href={item.href}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`block px-4 py-3 font-mono text-sm transition-colors ${
+                  className={`block px-4 py-3 font-mono text-sm transition-colors min-h-[44px] flex items-center ${
                     isActive ? 'text-cyber-neon bg-cyber-neon/5' : 'text-cyber-text-dim hover:text-cyber-neon hover:bg-cyber-neon/5'
                   }`}
                   onClick={() => setMobileOpen(false)}

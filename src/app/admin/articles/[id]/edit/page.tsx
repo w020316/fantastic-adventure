@@ -29,6 +29,7 @@ interface ArticleData {
   slug: string
   excerpt: string | null
   content: string
+  coverImage: string | null
   status: 'DRAFT' | 'PUBLISHED'
   categoryId: string | null
   tags: { id: string; name: string; slug: string }[]
@@ -45,6 +46,7 @@ export default function AdminArticleEditPage() {
   const [slugManuallyEdited, setSlugManuallyEdited] = useState(false)
   const [excerpt, setExcerpt] = useState('')
   const [content, setContent] = useState('')
+  const [coverImage, setCoverImage] = useState('')
   const [categoryId, setCategoryId] = useState('')
   const [tagIds, setTagIds] = useState<string[]>([])
   const [status, setStatus] = useState<'DRAFT' | 'PUBLISHED'>('DRAFT')
@@ -53,6 +55,7 @@ export default function AdminArticleEditPage() {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
   const [loadingArticle, setLoadingArticle] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
   useEffect(() => {
     if (sessionStatus !== 'authenticated') return
@@ -87,14 +90,15 @@ export default function AdminArticleEditPage() {
           setSlug(data.slug)
           setExcerpt(data.excerpt || '')
           setContent(data.content)
+          setCoverImage(data.coverImage || '')
           setStatus(data.status)
           setCategoryId(data.categoryId || '')
           setTagIds(data.tags.map((t) => t.id))
         } else {
-          setError('文章未找到')
+          setLoadError('文章未找到')
         }
       } catch {
-        setError('获取文章失败')
+        setLoadError('获取文章失败')
       } finally {
         setLoadingArticle(false)
       }
@@ -129,6 +133,7 @@ export default function AdminArticleEditPage() {
       slug,
       excerpt: excerpt || undefined,
       content,
+      coverImage: coverImage || undefined,
       status,
       categoryId: categoryId || undefined,
       tagIds: tagIds.length > 0 ? tagIds : undefined,
@@ -183,6 +188,21 @@ export default function AdminArticleEditPage() {
     )
   }
 
+  if (loadError) {
+    return (
+      <div className="p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="cyber-card p-8 text-center">
+            <p className="font-mono text-sm text-cyber-pink mb-4">{loadError}</p>
+            <Link href="/admin/articles" className="cyber-button text-xs py-2 px-6">
+              ← 返回文章列表
+            </Link>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
@@ -203,7 +223,7 @@ export default function AdminArticleEditPage() {
                   type="text"
                   value={title}
                   onChange={(e) => handleTitleChange(e.target.value)}
-                  className="cyber-input text-sm"
+                  className="cyber-input text-sm w-full"
                   style={{ paddingLeft: '1rem' }}
                   placeholder="文章标题"
                   required
@@ -216,7 +236,7 @@ export default function AdminArticleEditPage() {
                   type="text"
                   value={slug}
                   onChange={(e) => handleSlugChange(e.target.value)}
-                  className="cyber-input text-sm"
+                  className="cyber-input text-sm w-full"
                   style={{ paddingLeft: '1rem' }}
                   placeholder="article-slug"
                   required
@@ -228,10 +248,22 @@ export default function AdminArticleEditPage() {
                 <textarea
                   value={excerpt}
                   onChange={(e) => setExcerpt(e.target.value)}
-                  className="cyber-input text-sm resize-none"
+                  className="cyber-input text-sm resize-none w-full"
                   style={{ paddingLeft: '1rem' }}
                   rows={2}
                   placeholder="简短描述..."
+                />
+              </div>
+
+              <div>
+                <label className="block font-mono text-xs text-cyber-text-dim mb-1">封面图片</label>
+                <input
+                  type="text"
+                  value={coverImage}
+                  onChange={(e) => setCoverImage(e.target.value)}
+                  className="cyber-input text-sm w-full"
+                  style={{ paddingLeft: '1rem' }}
+                  placeholder="https://example.com/cover.jpg"
                 />
               </div>
 
@@ -240,7 +272,7 @@ export default function AdminArticleEditPage() {
                 <textarea
                   value={content}
                   onChange={(e) => setContent(e.target.value)}
-                  className="cyber-input text-sm resize-y font-mono"
+                  className="cyber-input text-sm resize-y font-mono w-full"
                   style={{ paddingLeft: '1rem', minHeight: '24rem' }}
                   placeholder="在此输入 Markdown 内容..."
                   required
@@ -253,7 +285,7 @@ export default function AdminArticleEditPage() {
                   <select
                     value={categoryId}
                     onChange={(e) => setCategoryId(e.target.value)}
-                    className="cyber-input text-sm"
+                    className="cyber-input text-sm w-full"
                     style={{ paddingLeft: '1rem' }}
                   >
                     <option value="">无分类</option>
@@ -318,13 +350,23 @@ export default function AdminArticleEditPage() {
                 </div>
               )}
 
-              <button
-                type="submit"
-                disabled={submitting}
-                className="cyber-button w-full py-3 text-sm disabled:opacity-50"
-              >
-                {submitting ? '保存中...' : '保存修改'}
-              </button>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="cyber-button flex-1 py-3 text-sm disabled:opacity-50"
+                >
+                  {submitting ? '保存中...' : '保存修改'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => router.push('/admin/articles')}
+                  className="cyber-button py-3 px-6 text-sm"
+                  style={{ borderColor: 'var(--color-cyber-text-dim)', color: 'var(--color-cyber-text-dim)' }}
+                >
+                  取消
+                </button>
+              </div>
             </div>
 
             <div className="lg:block">

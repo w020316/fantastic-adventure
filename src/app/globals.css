@@ -637,12 +637,112 @@
 
 @media (max-width: 640px) {
   .cyber-card:hover {
-    transform: none;
+    transform: none !important;
+    box-shadow: none !important;
   }
 
-  .cyber-button:active {
-    transform: scale(0.98);
+  .cyber-button {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
   }
+
+  .cyber-input {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .cyber-tag {
+    min-height: 28px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .font-display {
+    letter-spacing: 0.02em;
+  }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    -webkit-text-size-adjust: 100%;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+html.light-mode {
+  --color-cyber-bg: #f5f5f5;
+  --color-cyber-surface: #ffffff;
+  --color-cyber-border: #e0e0e0;
+  --color-cyber-neon: #00b377;
+  --color-cyber-pink: #e60073;
+  --color-cyber-blue: #0099cc;
+  --color-cyber-yellow: #cc9900;
+  --color-cyber-text: #1a1a2e;
+  --color-cyber-text-dim: #666680;
+  --color-cyber-glow: rgba(0, 179, 119, 0.15);
+}
+
+html.light-mode body {
+  background-color: var(--color-cyber-bg);
+  color: var(--color-cyber-text);
+}
+
+html.light-mode .glass-panel {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(12px);
+}
+
+html.light-mode .cyber-card {
+  background: var(--color-cyber-surface);
+}
+
+html.light-mode .cyber-input {
+  background: var(--color-cyber-surface);
+  color: var(--color-cyber-text);
+}
+
+html.light-mode .grid-bg {
+  background-image:
+    linear-gradient(rgba(0, 179, 119, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 179, 119, 0.05) 1px, transparent 1px);
+}
+
+html.light-mode .neon-text {
+  text-shadow: none;
+}
+
+html.light-mode .neon-text-pink {
+  text-shadow: none;
+}
+
+html.light-mode .neon-text-blue {
+  text-shadow: none;
+}
+
+html.light-mode .cyber-card:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+html.light-mode .prose-cyber {
+  color: var(--color-cyber-text);
+}
+
+html.light-mode .prose-cyber code {
+  background: var(--color-cyber-surface);
+  color: var(--color-cyber-pink);
+}
+
+html.light-mode .prose-cyber pre {
+  background: var(--color-cyber-surface);
+}
+
+html.light-mode .prose-cyber blockquote {
+  background: rgba(0, 179, 119, 0.05);
+  color: var(--color-cyber-text-dim);
 }
 
 @layer base {

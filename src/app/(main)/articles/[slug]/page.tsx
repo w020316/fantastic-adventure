@@ -4,6 +4,8 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { fetchArticles, fetchArticle, likeArticle, submitComment } from '@/lib/api'
+import { useBookmarks } from '@/hooks/useBookmarks'
+import { useReadingHistory } from '@/hooks/useReadingHistory'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
@@ -101,7 +103,7 @@ function LikeButton({ initialLikes, articleId }: { initialLikes: number; article
     <button
       onClick={handleLike}
       aria-label={liked ? '取消点赞' : '点赞文章'}
-      className={`flex items-center gap-2 px-4 py-2 rounded-sm font-mono text-xs transition-all border ${
+      className={`flex items-center gap-2 px-4 py-2 rounded-sm font-mono text-xs transition-all border min-h-[44px] ${
         liked
           ? 'border-cyber-pink/50 text-cyber-pink bg-cyber-pink/10'
           : 'border-cyber-border text-cyber-text-dim hover:border-cyber-pink/30 hover:text-cyber-pink'
@@ -113,6 +115,51 @@ function LikeButton({ initialLikes, articleId }: { initialLikes: number; article
       </svg>
       {likes}
     </button>
+  )
+}
+
+function BookmarkButton({ articleId, title, slug, excerpt }: { articleId: string; title: string; slug: string; excerpt: string }) {
+  const { addBookmark, removeBookmark, isBookmarked } = useBookmarks()
+  const [bookmarked, setBookmarked] = useState(false)
+  const [toast, setToast] = useState('')
+
+  useEffect(() => {
+    setBookmarked(isBookmarked(articleId))
+  }, [articleId, isBookmarked])
+
+  function handleBookmark() {
+    if (bookmarked) {
+      removeBookmark(articleId)
+      setBookmarked(false)
+      setToast('已移除书签')
+    } else {
+      addBookmark({ id: articleId, title, slug, excerpt })
+      setBookmarked(true)
+      setToast('已添加书签')
+    }
+    setTimeout(() => setToast(''), 2000)
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={handleBookmark}
+        aria-label={bookmarked ? '移除书签' : '添加书签'}
+        className={`flex items-center gap-2 px-4 py-2 rounded-sm font-mono text-xs transition-all border min-h-[44px] ${
+          bookmarked
+            ? 'border-cyber-yellow/50 text-cyber-yellow bg-cyber-yellow/10'
+            : 'border-cyber-border text-cyber-text-dim hover:border-cyber-yellow/30 hover:text-cyber-yellow'
+        }`}
+      >
+        <span className="text-base">{bookmarked ? '★' : '☆'}</span>
+        {bookmarked ? '已收藏' : '收藏'}
+      </button>
+      {toast && (
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-sm bg-cyber-surface border border-cyber-neon/30 text-cyber-neon font-mono text-xs animate-fade-in-up pointer-events-none">
+          {toast}
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -145,14 +192,14 @@ function ShareButtons({ title }: { title: string }) {
     <div className="flex gap-2 flex-wrap">
       <button
         onClick={handleTwitter}
-        className="cyber-tag hover:scale-105 transition-transform"
+        className="cyber-tag hover:scale-105 transition-transform min-h-[44px]"
         aria-label="分享到 Twitter"
       >
         Twitter
       </button>
       <button
         onClick={handleCopy}
-        className={`cyber-tag hover:scale-105 transition-transform ${copied ? 'cyber-tag-green' : ''}`}
+        className={`cyber-tag hover:scale-105 transition-transform min-h-[44px] ${copied ? 'cyber-tag-green' : ''}`}
         aria-label="复制链接"
       >
         {copied ? '✓ 已复制' : '复制链接'}
@@ -273,7 +320,7 @@ function CommentSection({ articleId, initialComments }: { articleId: string; ini
             <button
               type="submit"
               disabled={submitting}
-              className="cyber-button px-4 py-2 text-xs ml-auto disabled:opacity-50"
+              className="cyber-button px-4 py-2 text-xs ml-auto disabled:opacity-50 min-h-[44px]"
             >
               {submitting ? '提交中...' : '发表评论'}
             </button>
@@ -429,6 +476,7 @@ export default function ArticleDetailPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [loadError, setLoadError] = useState(false)
+  const { addToHistory } = useReadingHistory()
 
   useEffect(() => {
     const controller = new AbortController()
@@ -444,6 +492,11 @@ export default function ArticleDetailPage() {
           return
         }
         setArticle(detail)
+        addToHistory({
+          id: detail.id,
+          title: detail.title,
+          slug: detail.slug,
+        })
         const data = await fetchArticles()
         if (controller.signal.aborted) return
         const related = (data.articles || [])
@@ -461,7 +514,7 @@ export default function ArticleDetailPage() {
     }
     load()
     return () => controller.abort()
-  }, [slug])
+  }, [slug, addToHistory])
 
   if (loading) {
     return <ArticleSkeleton />
@@ -575,9 +628,17 @@ export default function ArticleDetailPage() {
               </div>
             )}
 
-            <div className="cyber-card p-4 mb-6 flex items-center justify-between">
+            <div className="cyber-card p-4 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <span className="font-mono text-xs text-cyber-text-dim">觉得这篇文章有帮助？</span>
-              <LikeButton initialLikes={article.likes} articleId={article.id} />
+              <div className="flex items-center gap-2">
+                <BookmarkButton
+                  articleId={article.id}
+                  title={article.title}
+                  slug={article.slug}
+                  excerpt={article.excerpt || ''}
+                />
+                <LikeButton initialLikes={article.likes} articleId={article.id} />
+              </div>
             </div>
 
             <CommentSection articleId={article.id} initialComments={article.comments || []} />
