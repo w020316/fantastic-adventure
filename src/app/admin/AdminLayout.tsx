@@ -8,6 +8,7 @@ import Link from 'next/link'
 const navItems = [
   { label: '仪表盘', href: '/admin', icon: '◈' },
   { label: '文章管理', href: '/admin/articles', icon: '▤' },
+  { label: '分类标签', href: '/admin/categories', icon: '🏷' },
   { label: '评论审核', href: '/admin/comments', icon: '◈' },
   { label: '项目管理', href: '/admin/projects', icon: '◆' },
 ]

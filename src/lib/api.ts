@@ -63,3 +63,48 @@ export async function reportStats(data: { path: string; referrer?: string }) {
     body: JSON.stringify(data),
   })
 }
+
+export async function createCategory(data: { name: string; slug: string; description?: string }) {
+  const res = await fetch(`${BASE}/api/categories`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('创建分类失败')
+  return res.json()
+}
+
+export async function updateCategory(id: string, data: { name?: string; slug?: string; description?: string }) {
+  const res = await fetch(`${BASE}/api/categories/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('更新分类失败')
+  return res.json()
+}
+
+export async function deleteCategory(id: string) {
+  const res = await fetch(`${BASE}/api/categories/${id}`, { method: 'DELETE' })
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}))
+    throw new Error(data.error || '删除分类失败')
+  }
+  return res.json()
+}
+
+export async function createTag(data: { name: string; slug: string }) {
+  const res = await fetch(`${BASE}/api/tags`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })
+  if (!res.ok) throw new Error('创建标签失败')
+  return res.json()
+}
+
+export async function deleteTag(id: string) {
+  const res = await fetch(`${BASE}/api/tags/${id}`, { method: 'DELETE' })
+  if (!res.ok) throw new Error('删除标签失败')
+  return res.json()
+}

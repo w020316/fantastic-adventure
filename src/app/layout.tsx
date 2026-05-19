@@ -19,14 +19,30 @@ const orbitron = Orbitron({
 })
 
 export const metadata: Metadata = {
-  title: 'CyberBlog - 赛博朋克个人博客',
+  title: {
+    default: 'CyberBlog - 赛博朋克个人博客',
+    template: '%s | CyberBlog',
+  },
   description: '一个赛博朋克风格的全栈个人博客系统，技术文章 + 生活随笔 + 作品展示',
-  keywords: ['博客', '赛博朋克', '全栈开发', 'Next.js', 'React'],
-  authors: [{ name: 'CyberBlog' }],
+  keywords: ['博客', '赛博朋克', '全栈开发', 'Next.js', 'React', 'TypeScript', 'Prisma'],
+  authors: [{ name: 'CyberBlog', url: 'https://github.com/w020316' }],
+  creator: 'CyberBlog',
   openGraph: {
-    title: 'CyberBlog',
-    description: '赛博朋克风格个人博客',
     type: 'website',
+    locale: 'zh_CN',
+    siteName: 'CyberBlog',
+    title: 'CyberBlog - 赛博朋克个人博客',
+    description: '探索技术 · 记录生活 · 展示作品',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'CyberBlog - 赛博朋克个人博客',
+    description: '探索技术 · 记录生活 · 展示作品',
+  },
+  alternates: {
+    types: {
+      'application/rss+xml': '/feed.xml',
+    },
   },
 }
 
