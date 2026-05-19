@@ -198,6 +198,11 @@ function CommentSection({ articleId, initialComments }: { articleId: string; ini
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [replyingTo, setReplyingTo] = useState<string | null>(null)
+  const [replyNickname, setReplyNickname] = useState('')
+  const [replyContent, setReplyContent] = useState('')
+  const [replyEmail, setReplyEmail] = useState('')
+  const [replySubmitting, setReplySubmitting] = useState(false)
 
   const flatComments = useMemo(() => {
     const result: (ApiComment & { isReply?: boolean })[] = []
@@ -235,6 +240,41 @@ function CommentSection({ articleId, initialComments }: { articleId: string; ini
     } catch {
     } finally {
       setSubmitting(false)
+    }
+  }
+
+  async function handleReplySubmit(e: React.FormEvent, parentId: string) {
+    e.preventDefault()
+    if (!replyNickname.trim() || !replyContent.trim()) return
+
+    setReplySubmitting(true)
+    try {
+      const result = await submitComment({
+        articleId,
+        nickname: replyNickname.trim(),
+        content: replyContent.trim(),
+        email: replyEmail.trim() || undefined,
+        parentId,
+      })
+      if (result.comment) {
+        setCommentList((prev) =>
+          prev.map((c) => {
+            if (c.id === parentId) {
+              return { ...c, replies: [...(c.replies || []), result.comment] }
+            }
+            return c
+          })
+        )
+      }
+      setReplyNickname('')
+      setReplyContent('')
+      setReplyEmail('')
+      setReplyingTo(null)
+      setSubmitted(true)
+      setTimeout(() => setSubmitted(false), 3000)
+    } catch {
+    } finally {
+      setReplySubmitting(false)
     }
   }
 
@@ -301,23 +341,104 @@ function CommentSection({ articleId, initialComments }: { articleId: string; ini
       </div>
 
       <div className="space-y-3">
-        {flatComments.length > 0 ? (
-          flatComments.map((comment, i) => (
-            <div
-              key={comment.id}
-              className={`cyber-card p-4 ${comment.isReply ? 'ml-6 border-l-2 border-l-cyber-blue/30' : ''}`}
-              style={{ animation: `fadeInUp 0.3s ease ${i * 0.05}s forwards`, opacity: 0 }}
-            >
-              <div className="flex items-start gap-3">
-                <span className="text-xl flex-shrink-0" aria-hidden="true">{comment.avatar || '👤'}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="font-mono text-xs text-cyber-neon">{comment.nickname}</span>
-                    <span className="font-mono text-xs text-cyber-text-dim">{formatDate(comment.createdAt)}</span>
+        {commentList.length > 0 ? (
+          commentList.map((comment) => (
+            <div key={comment.id}>
+              <div
+                className="cyber-card p-4"
+                style={{ animation: 'fadeInUp 0.3s ease forwards', opacity: 0 }}
+              >
+                <div className="flex items-start gap-3">
+                  <span className="text-xl flex-shrink-0" aria-hidden="true">{comment.avatar || '👤'}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="font-mono text-xs text-cyber-neon">{comment.nickname}</span>
+                      <span className="font-mono text-xs text-cyber-text-dim">{formatDate(comment.createdAt)}</span>
+                    </div>
+                    <p className="text-cyber-text text-sm leading-relaxed">{comment.content}</p>
+                    <button
+                      onClick={() => {
+                        setReplyingTo(replyingTo === comment.id ? null : comment.id)
+                        setReplyNickname('')
+                        setReplyContent('')
+                        setReplyEmail('')
+                      }}
+                      className="font-mono text-xs text-cyber-blue hover:text-cyber-neon transition-colors mt-2"
+                    >
+                      {replyingTo === comment.id ? '取消回复' : '回复'}
+                    </button>
                   </div>
-                  <p className="text-cyber-text text-sm leading-relaxed">{comment.content}</p>
                 </div>
               </div>
+
+              {replyingTo === comment.id && (
+                <div className="ml-8 mt-2 cyber-card p-4 border-l-2 border-l-cyber-blue/30">
+                  <form onSubmit={(e) => handleReplySubmit(e, comment.id)} className="space-y-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <input
+                        type="text"
+                        placeholder="昵称 *"
+                        className="cyber-input text-xs py-2"
+                        style={{ paddingLeft: '1rem' }}
+                        value={replyNickname}
+                        onChange={(e) => setReplyNickname(e.target.value)}
+                        required
+                      />
+                      <input
+                        type="email"
+                        placeholder="邮箱 (可选)"
+                        className="cyber-input text-xs py-2"
+                        style={{ paddingLeft: '1rem' }}
+                        value={replyEmail}
+                        onChange={(e) => setReplyEmail(e.target.value)}
+                      />
+                    </div>
+                    <textarea
+                      placeholder="写下你的回复... *"
+                      className="cyber-input text-xs py-2 resize-none"
+                      style={{ paddingLeft: '1rem', minHeight: '80px' }}
+                      value={replyContent}
+                      onChange={(e) => setReplyContent(e.target.value)}
+                      required
+                    />
+                    <div className="flex items-center justify-end gap-2">
+                      {submitted && (
+                        <span className="font-mono text-xs text-cyber-neon" role="status">✓ 回复已提交，等待审核</span>
+                      )}
+                      <button
+                        type="submit"
+                        disabled={replySubmitting}
+                        className="cyber-button px-3 py-1.5 text-xs disabled:opacity-50 min-h-[36px]"
+                      >
+                        {replySubmitting ? '提交中...' : '回复'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
+              {comment.replies && comment.replies.length > 0 && (
+                <div className="ml-8 mt-2 space-y-2">
+                  {comment.replies.map((reply) => (
+                    <div
+                      key={reply.id}
+                      className="cyber-card p-3 border-l-2 border-l-cyber-blue/30"
+                      style={{ animation: 'fadeInUp 0.3s ease forwards', opacity: 0 }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className="text-lg flex-shrink-0" aria-hidden="true">{reply.avatar || '👤'}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="font-mono text-xs text-cyber-neon">{reply.nickname}</span>
+                            <span className="font-mono text-xs text-cyber-text-dim">{formatDate(reply.createdAt)}</span>
+                          </div>
+                          <p className="text-cyber-text text-sm leading-relaxed">{reply.content}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ))
         ) : (

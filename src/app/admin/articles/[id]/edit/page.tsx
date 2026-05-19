@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useParams } from 'next/navigation'
 import ReactMarkdown from 'react-markdown'
@@ -9,6 +9,7 @@ import rehypeSlug from 'rehype-slug'
 import rehypeHighlight from 'rehype-highlight'
 import { slugify } from '@/lib/utils'
 import { articleSchema } from '@/lib/validations'
+import { useAutoSave } from '@/hooks/useAutoSave'
 import Link from 'next/link'
 
 interface Category {
@@ -56,6 +57,13 @@ export default function AdminArticleEditPage() {
   const [error, setError] = useState('')
   const [loadingArticle, setLoadingArticle] = useState(true)
   const [loadError, setLoadError] = useState('')
+  const [autoSaveIndicator, setAutoSaveIndicator] = useState(false)
+
+  const draftData = useMemo(() => ({
+    title, slug, excerpt, content, coverImage, categoryId, tagIds, status,
+  }), [title, slug, excerpt, content, coverImage, categoryId, tagIds, status])
+
+  const { restore, clear } = useAutoSave(draftData, `cyberblog-draft-edit-${articleId}`)
 
   useEffect(() => {
     if (sessionStatus !== 'authenticated') return
@@ -105,6 +113,37 @@ export default function AdminArticleEditPage() {
     }
     fetchArticle()
   }, [sessionStatus, articleId])
+
+  useEffect(() => {
+    if (loadingArticle) return
+    const saved = restore()
+    if (saved && typeof saved === 'object' && 'title' in saved) {
+      const s = saved as typeof draftData
+      if (s.title || s.content) {
+        if (confirm('检测到未保存的草稿，是否恢复？')) {
+          setTitle(s.title)
+          setSlug(s.slug)
+          setExcerpt(s.excerpt)
+          setContent(s.content)
+          setCoverImage(s.coverImage)
+          setCategoryId(s.categoryId)
+          setTagIds(s.tagIds)
+          setStatus(s.status as 'DRAFT' | 'PUBLISHED')
+        } else {
+          clear()
+        }
+      }
+    }
+  }, [loadingArticle])
+
+  useEffect(() => {
+    if (!title && !content) return
+    const timer = setInterval(() => {
+      setAutoSaveIndicator(true)
+      setTimeout(() => setAutoSaveIndicator(false), 3000)
+    }, 30000)
+    return () => clearInterval(timer)
+  }, [title, content])
 
   const handleTitleChange = useCallback((value: string) => {
     setTitle(value)
@@ -157,6 +196,7 @@ export default function AdminArticleEditPage() {
         body: JSON.stringify(payload),
       })
       if (res.ok) {
+        clear()
         router.push('/admin/articles')
       } else {
         const data = await res.json()
@@ -212,6 +252,9 @@ export default function AdminArticleEditPage() {
               ← 文章列表
             </Link>
           </div>
+          {autoSaveIndicator && (
+            <span className="font-mono text-xs text-cyber-neon/70">已自动保存</span>
+          )}
         </div>
 
         <form onSubmit={handleSubmit}>

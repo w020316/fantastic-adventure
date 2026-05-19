@@ -11,6 +11,7 @@ const navItems = [
   { label: '分类标签', href: '/admin/categories', icon: '🏷' },
   { label: '评论审核', href: '/admin/comments', icon: '◈' },
   { label: '项目管理', href: '/admin/projects', icon: '◆' },
+  { label: '系统设置', href: '/admin/settings', icon: '⚙️' },
 ]
 
 function isActive(pathname: string, href: string) {

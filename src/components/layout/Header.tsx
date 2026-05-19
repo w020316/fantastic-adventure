@@ -11,6 +11,7 @@ const navItems = [
   { href: '/bookmarks', label: '书签' },
   { href: '/projects', label: '作品集' },
   { href: '/about', label: '关于' },
+  { href: '/history', label: '历史' },
 ]
 
 export default function Header() {

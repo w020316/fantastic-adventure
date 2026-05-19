@@ -18,8 +18,3 @@ export async function requireAdmin() {
   }
   return null
 }
-
-export function getSessionUser(user: unknown): SessionUser | null {
-  if (!user || typeof user !== 'object') return null
-  return user as SessionUser
-}
