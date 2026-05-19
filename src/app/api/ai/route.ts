@@ -1,21 +1,54 @@
-declare global {
-  var __aiRateLimit: Map<string, number[]> | undefined
+import { NextRequest } from 'next/server'
+
+const SYSTEM_PROMPT = `你是 CyberBlog 的 AI 助手，一个赛博朋克风格博客的智能助手。
+你的性格：冷静、精准、略带赛博朋克风格，偶尔使用技术隐喻。
+回答风格：简洁有力，善用代码示例，适当使用 → ◆ ▸ 等符号。
+语言：中文为主，技术术语保留英文。
+限制：只回答与技术、博客内容相关的问题，不回答政治、暴力等敏感话题。`
+
+function getClientIP(request: NextRequest): string {
+  return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
+    || request.headers.get('x-real-ip')
+    || 'unknown'
 }
 
-import { NextRequest, NextResponse } from 'next/server'
-
-const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions'
+function checkRateLimit(ip: string): boolean {
+  const globalMap = (globalThis as Record<string, unknown>).__aiRateLimit as Map<string, { count: number; resetAt: number }> | undefined
+  if (!globalMap) {
+    const map = new Map<string, { count: number; resetAt: number }>()
+    ;(globalThis as Record<string, unknown>).__aiRateLimit = map
+    const now = Date.now()
+    map.set(ip, { count: 1, resetAt: now + 60000 })
+    return true
+  }
+  const now = Date.now()
+  const entry = globalMap.get(ip)
+  if (!entry || now > entry.resetAt) {
+    globalMap.set(ip, { count: 1, resetAt: now + 60000 })
+    return true
+  }
+  entry.count++
+  return entry.count <= 10
+}
 
 export async function POST(request: NextRequest) {
-  try {
-    const apiKey = process.env.DEEPSEEK_API_KEY
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'AI 服务未配置', reply: 'AI 助手暂未配置，请联系管理员。' },
-        { status: 200 }
-      )
-    }
+  const ip = getClientIP(request)
+  if (!checkRateLimit(ip)) {
+    return new Response(JSON.stringify({ error: '请求过于频繁，请稍后再试' }), {
+      status: 429,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
 
+  const apiKey = process.env.DEEPSEEK_API_KEY
+  if (!apiKey) {
+    return new Response(JSON.stringify({ error: 'AI 服务暂未配置' }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  try {
     const body = await request.json()
     const { message, context, history } = body as {
       message: string
@@ -23,40 +56,34 @@ export async function POST(request: NextRequest) {
       history?: { role: 'user' | 'assistant'; content: string }[]
     }
 
-    if (!message || typeof message !== 'string' || message.trim().length === 0) {
-      return NextResponse.json({ error: '消息不能为空' }, { status: 400 })
+    if (!message?.trim()) {
+      return new Response(JSON.stringify({ error: '请输入消息' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })
     }
 
     if (message.length > 2000) {
-      return NextResponse.json({ error: '消息过长' }, { status: 400 })
+      return new Response(JSON.stringify({ error: '消息过长' }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' },
+      })
     }
 
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown'
+    const systemContent = context
+      ? `${SYSTEM_PROMPT}\n\n当前上下文：${context}`
+      : SYSTEM_PROMPT
 
-    const now = Date.now()
-    if (!globalThis.__aiRateLimit) {
-      globalThis.__aiRateLimit = new Map<string, number[]>()
-    }
-    const rateMap = globalThis.__aiRateLimit as Map<string, number[]>
-    const userRequests = rateMap.get(ip) || []
-    const recentRequests = userRequests.filter(t => now - t < 60000)
-    if (recentRequests.length >= 10) {
-      return NextResponse.json(
-        { error: '请求过于频繁，请稍后再试', reply: '请求过于频繁，请稍后再试。' },
-        { status: 429 }
-      )
-    }
-    recentRequests.push(now)
-    rateMap.set(ip, recentRequests)
+    const messages = [
+      { role: 'system' as const, content: systemContent },
+      ...(history || []).map((m: { role: 'user' | 'assistant'; content: string }) => ({
+        role: m.role as 'user' | 'assistant',
+        content: m.content,
+      })),
+      { role: 'user' as const, content: message.trim() },
+    ]
 
-    const systemPrompt = `你是 CyberBlog AI 助手，一个赛博朋克风格的技术博客助手。你的特点：
-1. 回答简洁专业，带有轻微的赛博朋克风格
-2. 擅长技术问题解答、代码解释、文章摘要
-3. 使用中文回答
-4. 偶尔使用技术术语和编程隐喻
-5. 回答开头可以用 > 符号表示系统输出风格${context ? `\n\n当前页面上下文：${context}` : ''}`
-
-    const response = await fetch(DEEPSEEK_API_URL, {
+    const response = await fetch('https://api.deepseek.com/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -64,35 +91,83 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify({
         model: 'deepseek-chat',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...(history || []).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
-          { role: 'user', content: message.trim() },
-        ],
-        max_tokens: 500,
-        temperature: 0.7,
-        stream: false,
+        messages,
+        max_tokens: 800,
+        stream: true,
       }),
     })
 
     if (!response.ok) {
       const errorText = await response.text()
       console.error('DeepSeek API error:', response.status, errorText)
-      return NextResponse.json(
-        { error: 'AI 服务暂时不可用', reply: 'AI 服务暂时不可用，请稍后再试。' },
-        { status: 200 }
-      )
+      return new Response(JSON.stringify({ error: 'AI 服务暂时不可用' }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
     }
 
-    const data = await response.json()
-    const reply = data.choices?.[0]?.message?.content || '抱歉，我无法理解你的问题。'
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        const reader = response.body?.getReader()
+        if (!reader) {
+          controller.close()
+          return
+        }
 
-    return NextResponse.json({ reply })
+        const decoder = new TextDecoder()
+        let buffer = ''
+
+        try {
+          while (true) {
+            const { done, value } = await reader.read()
+            if (done) break
+
+            buffer += decoder.decode(value, { stream: true })
+            const lines = buffer.split('\n')
+            buffer = lines.pop() || ''
+
+            for (const line of lines) {
+              const trimmed = line.trim()
+              if (!trimmed || !trimmed.startsWith('data: ')) continue
+
+              const data = trimmed.slice(6)
+              if (data === '[DONE]') {
+                controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+                continue
+              }
+
+              try {
+                const parsed = JSON.parse(data)
+                const content = parsed.choices?.[0]?.delta?.content
+                if (content) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
+                }
+              } catch {
+                // skip malformed JSON
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Stream error:', error)
+        } finally {
+          controller.close()
+        }
+      },
+    })
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    })
   } catch (error) {
     console.error('AI route error:', error)
-    return NextResponse.json(
-      { error: '服务异常', reply: '服务异常，请稍后再试。' },
-      { status: 200 }
-    )
+    return new Response(JSON.stringify({ error: 'AI 服务异常' }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' },
+    })
   }
 }

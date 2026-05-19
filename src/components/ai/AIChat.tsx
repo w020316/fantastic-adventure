@@ -6,9 +6,9 @@ interface Message {
   id: string
   role: 'user' | 'assistant'
   content: string
-  typing?: boolean
   loading?: boolean
   error?: boolean
+  streaming?: boolean
 }
 
 const QUICK_ACTIONS = [
@@ -22,11 +22,8 @@ export default function AIChat() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
-  const [isTyping, setIsTyping] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [sending, setSending] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const rafRef = useRef<number | null>(null)
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -35,55 +32,6 @@ export default function AIChat() {
   useEffect(() => {
     scrollToBottom()
   }, [messages, scrollToBottom])
-
-  useEffect(() => {
-    return () => {
-      if (typingTimerRef.current) clearTimeout(typingTimerRef.current)
-      if (rafRef.current) cancelAnimationFrame(rafRef.current)
-    }
-  }, [])
-
-  function addMessage(role: 'user' | 'assistant', content: string, typing = false, loading = false, error = false) {
-    const id = Date.now().toString() + Math.random().toString(36).slice(2)
-    setMessages(prev => [...prev, { id, role, content, typing, loading, error }])
-    return id
-  }
-
-  function simulateTyping(fullText: string, msgId: string) {
-    setIsTyping(true)
-    let charIndex = 0
-    let lastUpdateTime = 0
-    const minInterval = 30
-
-    function typeFrame(timestamp: number) {
-      if (!lastUpdateTime) lastUpdateTime = timestamp
-
-      const elapsed = timestamp - lastUpdateTime
-      if (elapsed >= minInterval && charIndex < fullText.length) {
-        charIndex++
-        setMessages(prev =>
-          prev.map(m =>
-            m.id === msgId ? { ...m, content: fullText.slice(0, charIndex), loading: false } : m
-          )
-        )
-        lastUpdateTime = timestamp
-      }
-
-      if (charIndex >= fullText.length) {
-        setMessages(prev =>
-          prev.map(m => (m.id === msgId ? { ...m, content: fullText, typing: false, loading: false } : m))
-        )
-        setIsTyping(false)
-        return
-      }
-
-      rafRef.current = requestAnimationFrame(typeFrame)
-    }
-
-    typingTimerRef.current = setTimeout(() => {
-      rafRef.current = requestAnimationFrame(typeFrame)
-    }, 400)
-  }
 
   function getContext(): string | undefined {
     if (typeof window === 'undefined') return undefined
@@ -102,52 +50,112 @@ export default function AIChat() {
 
   async function handleSend(text?: string) {
     const message = (text || input).trim()
-    if (!message || isTyping || isLoading) return
+    if (!message || sending) return
     setInput('')
-    addMessage('user', message)
+    setSending(true)
 
-    const loadingId = addMessage('assistant', '', false, true)
-    setIsLoading(true)
+    const userMsgId = Date.now().toString() + Math.random().toString(36).slice(2)
+    const assistantMsgId = (Date.now() + 1).toString() + Math.random().toString(36).slice(2)
+
+    setMessages(prev => [
+      ...prev,
+      { id: userMsgId, role: 'user', content: message },
+      { id: assistantMsgId, role: 'assistant', content: '', loading: true },
+    ])
 
     try {
       const context = getContext()
       const recentMessages = messages.slice(-5).map(m => ({
         role: m.role,
-        content: m.content
+        content: m.content,
       }))
-      const res = await fetch('/api/ai', {
+
+      const response = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message, context, history: recentMessages }),
       })
 
-      const data = await res.json()
+      const contentType = response.headers.get('content-type') || ''
 
-      if (data.reply) {
-        setMessages(prev =>
-          prev.map(m => (m.id === loadingId ? { ...m, loading: false } : m))
-        )
-        simulateTyping(data.reply, loadingId)
-      } else {
-        const errorMsg = data.error || '未知错误'
+      if (contentType.includes('text/event-stream')) {
+        const reader = response.body?.getReader()
+        if (!reader) return
+
+        const decoder = new TextDecoder()
+        let buffer = ''
+        let fullContent = ''
+
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+
+          buffer += decoder.decode(value, { stream: true })
+          const lines = buffer.split('\n')
+          buffer = lines.pop() || ''
+
+          for (const line of lines) {
+            const trimmed = line.trim()
+            if (!trimmed || !trimmed.startsWith('data: ')) continue
+
+            const data = trimmed.slice(6)
+            if (data === '[DONE]') continue
+
+            try {
+              const parsed = JSON.parse(data)
+              if (parsed.content) {
+                fullContent += parsed.content
+                setMessages(prev =>
+                  prev.map(m =>
+                    m.id === assistantMsgId
+                      ? { ...m, content: fullContent, loading: false, streaming: true }
+                      : m
+                  )
+                )
+              }
+            } catch {
+              // skip malformed JSON
+            }
+          }
+        }
+
         setMessages(prev =>
           prev.map(m =>
-            m.id === loadingId
-              ? { ...m, content: errorMsg, typing: false, loading: false, error: true }
+            m.id === assistantMsgId
+              ? { ...m, streaming: false }
               : m
           )
         )
+      } else {
+        const data = await response.json()
+        if (data.error) {
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === assistantMsgId
+                ? { ...m, content: `⚠ ${data.error}`, loading: false, error: true }
+                : m
+            )
+          )
+        } else if (data.reply) {
+          setMessages(prev =>
+            prev.map(m =>
+              m.id === assistantMsgId
+                ? { ...m, content: data.reply, loading: false }
+                : m
+            )
+          )
+        }
       }
     } catch {
       setMessages(prev =>
         prev.map(m =>
-          m.id === loadingId
-            ? { ...m, content: '网络错误，请检查连接后重试', typing: false, loading: false, error: true }
+          m.id === assistantMsgId
+            ? { ...m, content: '⚠ 网络错误，请稍后重试', loading: false, error: true }
             : m
         )
       )
     } finally {
-      setIsLoading(false)
+      setSending(false)
     }
   }
 
@@ -250,7 +258,7 @@ export default function AIChat() {
                     <button
                       key={action.label}
                       onClick={() => handleSend(action.label)}
-                      disabled={isLoading}
+                      disabled={sending}
                       className="text-left px-3 py-2 rounded-sm text-xs font-mono transition-all duration-200 hover:scale-[1.02] disabled:opacity-30"
                       style={{
                         background: 'var(--color-cyber-surface)',
@@ -258,7 +266,7 @@ export default function AIChat() {
                         color: 'var(--color-cyber-text-dim)',
                       }}
                       onMouseEnter={e => {
-                        if (!isLoading) {
+                        if (!sending) {
                           e.currentTarget.style.borderColor = 'var(--color-cyber-neon)'
                           e.currentTarget.style.color = 'var(--color-cyber-neon)'
                         }
@@ -312,7 +320,7 @@ export default function AIChat() {
                   ) : (
                     msg.content
                   )}
-                  {msg.typing && !msg.loading && (
+                  {msg.streaming && !msg.loading && (
                     <span className="inline-block w-1.5 h-4 ml-0.5 align-middle animate-pulse" style={{ backgroundColor: 'var(--color-cyber-neon)' }} />
                   )}
                 </div>
@@ -328,7 +336,7 @@ export default function AIChat() {
                 <button
                   key={action.label}
                   onClick={() => handleSend(action.label)}
-                  disabled={isTyping || isLoading}
+                  disabled={sending}
                   className="shrink-0 px-2 py-1 rounded-sm text-[10px] font-mono transition-all duration-200 disabled:opacity-30"
                   style={{
                     background: 'var(--color-cyber-surface)',
@@ -336,7 +344,7 @@ export default function AIChat() {
                     color: 'var(--color-cyber-text-dim)',
                   }}
                   onMouseEnter={e => {
-                    if (!isTyping && !isLoading) {
+                    if (!sending) {
                       e.currentTarget.style.borderColor = 'var(--color-cyber-neon)'
                       e.currentTarget.style.color = 'var(--color-cyber-neon)'
                     }
@@ -363,12 +371,12 @@ export default function AIChat() {
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="输入消息..."
-                disabled={isTyping || isLoading}
+                disabled={sending}
                 className="cyber-input flex-1 !py-2 !pl-3 text-sm"
               />
               <button
                 onClick={() => handleSend()}
-                disabled={!input.trim() || isTyping || isLoading}
+                disabled={!input.trim() || sending}
                 className="w-9 h-9 rounded-sm flex items-center justify-center transition-all duration-200 disabled:opacity-30"
                 style={{
                   background: 'linear-gradient(135deg, var(--color-cyber-neon), var(--color-cyber-blue))',

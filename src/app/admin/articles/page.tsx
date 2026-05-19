@@ -1,9 +1,10 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
+import { useDebounce } from '@/hooks/useDebounce'
 
 interface Article {
   id: string
@@ -18,11 +19,22 @@ interface Article {
   tags: { id: string; name: string; slug: string }[]
 }
 
+type StatusFilter = 'ALL' | 'PUBLISHED' | 'DRAFT'
+
+const statusFilters: { key: StatusFilter; label: string }[] = [
+  { key: 'ALL', label: '全部' },
+  { key: 'PUBLISHED', label: '已发布' },
+  { key: 'DRAFT', label: '草稿' },
+]
+
 export default function AdminArticlesPage() {
   const { status: sessionStatus } = useSession()
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
+  const debouncedSearch = useDebounce(search, 300)
 
   useEffect(() => {
     if (sessionStatus !== 'authenticated') return
@@ -58,6 +70,18 @@ export default function AdminArticlesPage() {
     }
   }
 
+  const filteredArticles = useMemo(() => {
+    let result = articles
+    if (statusFilter !== 'ALL') {
+      result = result.filter((a) => a.status === statusFilter)
+    }
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase()
+      result = result.filter((a) => a.title.toLowerCase().includes(q))
+    }
+    return result
+  }, [articles, statusFilter, debouncedSearch])
+
   return (
     <div className="p-4 sm:p-6">
       <div className="max-w-6xl mx-auto">
@@ -70,6 +94,31 @@ export default function AdminArticlesPage() {
           <Link href="/admin/articles/new" className="cyber-button text-xs">
             + 新建文章
           </Link>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3 mb-4">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="搜索文章标题..."
+            className="cyber-input flex-1 text-sm"
+          />
+          <div className="flex gap-2">
+            {statusFilters.map((f) => (
+              <button
+                key={f.key}
+                onClick={() => setStatusFilter(f.key)}
+                className={`font-mono text-xs px-3 py-1.5 rounded-sm border transition-all ${
+                  statusFilter === f.key
+                    ? 'border-cyber-neon/50 text-cyber-neon bg-cyber-neon/10'
+                    : 'border-cyber-border text-cyber-text-dim hover:text-cyber-neon hover:border-cyber-neon/30'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="cyber-card">
@@ -99,14 +148,14 @@ export default function AdminArticlesPage() {
                       <td className="px-4 py-3"><div className="h-4 w-20 bg-cyber-border animate-pulse rounded ml-auto" /></td>
                     </tr>
                   ))
-                ) : articles.length === 0 ? (
+                ) : filteredArticles.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-4 py-12 text-center">
                       <p className="font-mono text-xs text-cyber-text-dim">{'// 暂无文章'}</p>
                     </td>
                   </tr>
                 ) : (
-                  articles.map((article) => (
+                  filteredArticles.map((article) => (
                     <tr key={article.id} className="border-b border-cyber-border/50 hover:bg-cyber-neon/5 transition-colors">
                       <td className="px-4 py-3">
                         <span className="font-display text-sm text-cyber-text line-clamp-1">

@@ -44,11 +44,20 @@ export const metadata: Metadata = {
       'application/rss+xml': '/feed.xml',
     },
   },
+  manifest: '/manifest.json',
+  other: {
+    'mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-capable': 'yes',
+    'apple-mobile-web-app-status-bar-style': 'black-translucent',
+    'apple-mobile-web-app-title': 'CyberBlog',
+  },
 }
 
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
+  maximumScale: 5,
+  themeColor: '#00ff9f',
 }
 
 export default function RootLayout({

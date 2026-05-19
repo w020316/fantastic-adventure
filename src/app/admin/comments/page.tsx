@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useSession } from 'next-auth/react'
+import { useDebounce } from '@/hooks/useDebounce'
 
 type CommentStatus = 'PENDING' | 'APPROVED' | 'HIDDEN'
 
@@ -67,6 +68,8 @@ export default function AdminCommentsPage() {
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<TabKey>('ALL')
+  const [search, setSearch] = useState('')
+  const debouncedSearch = useDebounce(search, 300)
 
   const fetchComments = useCallback(async () => {
     try {
@@ -89,9 +92,18 @@ export default function AdminCommentsPage() {
     }
   }, [status, fetchComments])
 
-  const filtered = activeTab === 'ALL'
-    ? comments
-    : comments.filter((c) => c.status === activeTab)
+  const filtered = useMemo(() => {
+    let result = activeTab === 'ALL'
+      ? comments
+      : comments.filter((c) => c.status === activeTab)
+    if (debouncedSearch.trim()) {
+      const q = debouncedSearch.toLowerCase()
+      result = result.filter(
+        (c) => c.content.toLowerCase().includes(q) || c.nickname.toLowerCase().includes(q)
+      )
+    }
+    return result
+  }, [comments, activeTab, debouncedSearch])
 
   async function updateStatus(id: string, newStatus: CommentStatus) {
     try {
@@ -137,6 +149,16 @@ export default function AdminCommentsPage() {
         <span className="font-mono text-xs text-cyber-text-dim self-center ml-auto">
           共 {filtered.length} 条
         </span>
+      </div>
+
+      <div className="mb-4">
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="搜索评论内容或昵称..."
+          className="cyber-input w-full text-sm"
+        />
       </div>
 
       {loading ? (
