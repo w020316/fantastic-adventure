@@ -5,8 +5,10 @@ export function cn(...classes: (string | boolean | undefined | null)[]) {
 export function slugify(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[^\w\s-]/g, '')
-    .replace(/[\s_]+/g, '-')
+    .trim()
+    .replace(/[\s]+/g, '-')
+    .replace(/[^\w\u4e00-\u9fff-]/g, '')
+    .replace(/--+/g, '-')
     .replace(/^-+|-+$/g, '')
 }
 
@@ -24,7 +26,5 @@ export function truncate(text: string, length: number): string {
 }
 
 export function readingTime(content: string): number {
-  const wordsPerMinute = 200
-  const wordCount = content.replace(/\s/g, '').length
-  return Math.max(1, Math.ceil(wordCount / wordsPerMinute))
+  return Math.max(1, Math.ceil((content?.length || 0) / 400))
 }

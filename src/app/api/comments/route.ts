@@ -34,8 +34,11 @@ function checkRateLimit(ip: string | null): boolean {
 
 function sanitizeText(text: string): string {
   return text
+    .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;')
 }
 
 export async function GET(request: NextRequest) {

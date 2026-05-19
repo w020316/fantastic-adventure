@@ -17,7 +17,11 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { message, context } = body as { message: string; context?: string }
+    const { message, context, history } = body as {
+      message: string
+      context?: string
+      history?: { role: 'user' | 'assistant'; content: string }[]
+    }
 
     if (!message || typeof message !== 'string' || message.trim().length === 0) {
       return NextResponse.json({ error: '消息不能为空' }, { status: 400 })
@@ -62,6 +66,7 @@ export async function POST(request: NextRequest) {
         model: 'deepseek-chat',
         messages: [
           { role: 'system', content: systemPrompt },
+          ...(history || []).map(m => ({ role: m.role as 'user' | 'assistant', content: m.content })),
           { role: 'user', content: message.trim() },
         ],
         max_tokens: 500,

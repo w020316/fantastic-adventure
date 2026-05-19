@@ -6,34 +6,11 @@ import { useParams } from 'next/navigation'
 import { fetchArticles, fetchArticle, likeArticle, submitComment } from '@/lib/api'
 import { useBookmarks } from '@/hooks/useBookmarks'
 import { useReadingHistory } from '@/hooks/useReadingHistory'
+import { categoryColorMap, categoryGradients, formatDate, getReadingTime } from '@/lib/constants'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
 import rehypeHighlight from 'rehype-highlight'
-
-const categoryColorMap: Record<string, string> = {
-  tech: 'cyber-tag-green',
-  life: 'cyber-tag-pink',
-  works: 'cyber-tag-blue',
-  essay: 'cyber-tag-yellow',
-}
-
-const categoryGradients: Record<string, string> = {
-  tech: 'from-emerald-900/40 via-cyan-900/30 to-teal-900/40',
-  life: 'from-rose-900/40 via-orange-900/30 to-amber-900/40',
-  works: 'from-sky-900/40 via-blue-900/30 to-indigo-900/40',
-  essay: 'from-yellow-900/40 via-amber-900/30 to-orange-900/40',
-}
-
-function formatDate(dateStr: string | null | undefined) {
-  if (!dateStr) return ''
-  const d = new Date(dateStr)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-function calcReadingTime(content: string) {
-  return Math.max(1, Math.ceil(content.length / 500))
-}
 
 function ReadingProgressBar() {
   const [progress, setProgress] = useState(0)
@@ -76,6 +53,8 @@ function LikeButton({ initialLikes, articleId }: { initialLikes: number; article
   }, [])
 
   async function handleLike() {
+    if (liked) return
+
     const newPath = window.location.pathname
     const stored = localStorage.getItem('cyberblog-likes')
     const likedArticles = stored ? JSON.parse(stored) : []
@@ -83,29 +62,22 @@ function LikeButton({ initialLikes, articleId }: { initialLikes: number; article
     setAnimating(true)
     setTimeout(() => setAnimating(false), 400)
 
-    if (liked) {
-      setLikes((l) => l - 1)
-      setLiked(false)
-      const filtered = likedArticles.filter((p: string) => p !== newPath)
-      localStorage.setItem('cyberblog-likes', JSON.stringify(filtered))
-    } else {
-      setLikes((l) => l + 1)
-      setLiked(true)
-      likedArticles.push(newPath)
-      localStorage.setItem('cyberblog-likes', JSON.stringify(likedArticles))
-      try {
-        await likeArticle(articleId)
-      } catch {}
-    }
+    setLikes((l) => l + 1)
+    setLiked(true)
+    likedArticles.push(newPath)
+    localStorage.setItem('cyberblog-likes', JSON.stringify(likedArticles))
+    try {
+      await likeArticle(articleId)
+    } catch {}
   }
 
   return (
     <button
       onClick={handleLike}
-      aria-label={liked ? '取消点赞' : '点赞文章'}
+      aria-label={liked ? '已点赞' : '点赞文章'}
       className={`flex items-center gap-2 px-4 py-2 rounded-sm font-mono text-xs transition-all border min-h-[44px] ${
         liked
-          ? 'border-cyber-pink/50 text-cyber-pink bg-cyber-pink/10'
+          ? 'border-cyber-pink/50 text-cyber-pink bg-cyber-pink/10 cursor-default'
           : 'border-cyber-border text-cyber-text-dim hover:border-cyber-pink/30 hover:text-cyber-pink'
       } ${animating ? 'scale-110' : 'scale-100'}`}
       style={{ transition: 'all 0.2s ease, transform 0.2s ease' }}
@@ -113,7 +85,7 @@ function LikeButton({ initialLikes, articleId }: { initialLikes: number; article
       <svg className={`w-4 h-4 transition-transform ${animating ? 'scale-125' : ''}`} fill={liked ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
       </svg>
-      {likes}
+      {liked ? '已点赞' : likes}
     </button>
   )
 }
@@ -563,7 +535,7 @@ export default function ArticleDetailPage() {
   }
 
   const coverGradient = categoryGradients[article.category?.slug || ''] || 'from-emerald-900/40 via-cyan-900/30 to-teal-900/40'
-  const readingTime = calcReadingTime(article.content)
+  const readingTime = getReadingTime(article.content)
   const commentCount = article.comments?.length || 0
 
   return (

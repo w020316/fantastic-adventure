@@ -1,62 +1,9 @@
 'use client'
 
-import { useState, useEffect, useMemo, Component } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import Link from 'next/link'
 import { fetchArticles, fetchCategories, fetchProjects, fetchStats, fetchTags } from '@/lib/api'
-
-class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean}> {
-  constructor(props: {children: React.ReactNode}) {
-    super(props)
-    this.state = { hasError: false }
-  }
-  static getDerivedStateFromError() {
-    return { hasError: true }
-  }
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{padding: '2rem', textAlign: 'center', color: '#e0e0e0', backgroundColor: '#0a0a0f', minHeight: '100vh'}}>
-          <h2 style={{fontFamily: 'monospace', color: '#ff0080'}}>SYSTEM.ERROR</h2>
-          <p style={{fontFamily: 'monospace', fontSize: '14px', color: '#8b8fa3'}}>页面加载出错，请刷新重试</p>
-          <a href="/home" style={{fontFamily: 'monospace', color: '#00ff9f', fontSize: '14px'}}>→ 返回首页</a>
-        </div>
-      )
-    }
-    return this.props.children
-  }
-}
-
-const categoryColorMap: Record<string, string> = {
-  tech: 'cyber-tag-green',
-  life: 'cyber-tag-pink',
-  works: 'cyber-tag-blue',
-  essay: 'cyber-tag-yellow',
-}
-
-const categoryGradients: Record<string, string> = {
-  tech: 'from-emerald-900/40 via-cyan-900/30 to-teal-900/40',
-  life: 'from-rose-900/40 via-orange-900/30 to-amber-900/40',
-  works: 'from-sky-900/40 via-blue-900/30 to-indigo-900/40',
-  essay: 'from-yellow-900/40 via-amber-900/30 to-orange-900/40',
-}
-
-const categoryColorValue: Record<string, string> = {
-  tech: '#00ff9f',
-  life: '#ff0080',
-  works: '#00d4ff',
-  essay: '#ffd700',
-}
-
-const defaultGradient = 'from-gray-900/40 via-slate-900/30 to-zinc-900/40'
-
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr)
-  return d.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-')
-}
-
-function getReadingTime(content: string) {
-  return Math.max(1, Math.ceil((content?.length || 0) / 300))
-}
+import { categoryColorMap, categoryGradients, categoryColorValue, defaultGradient, formatDate, getReadingTime } from '@/lib/constants'
 
 function useCountUp(target: number, duration = 1500) {
   const [count, setCount] = useState(0)
@@ -350,7 +297,6 @@ export default function HomePage() {
   }
 
   return (
-    <ErrorBoundary>
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-cyber-border">
@@ -609,6 +555,5 @@ export default function HomePage() {
         </div>
       </section>
     </div>
-    </ErrorBoundary>
   )
 }

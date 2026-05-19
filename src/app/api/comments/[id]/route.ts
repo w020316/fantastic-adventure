@@ -16,6 +16,11 @@ export async function PATCH(
     const { id } = await params
     const body = await request.json()
 
+    const validStatuses = ['PENDING', 'APPROVED', 'HIDDEN'] as const
+    if (!body.status || !validStatuses.includes(body.status)) {
+      return NextResponse.json({ error: '无效的状态值，必须为 PENDING、APPROVED 或 HIDDEN' }, { status: 400 })
+    }
+
     const comment = await prisma.comment.update({
       where: { id },
       data: { status: body.status },

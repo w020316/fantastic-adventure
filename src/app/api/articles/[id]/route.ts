@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { articleSchema } from '@/lib/validations'
 import { requireAdmin } from '@/lib/auth-guard'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
 export async function GET(
   _request: NextRequest,
@@ -39,6 +41,14 @@ export async function GET(
 
     if (!article) {
       return NextResponse.json({ error: '文章未找到' }, { status: 404 })
+    }
+
+    if (article.status === 'DRAFT') {
+      const session = await getServerSession(authOptions)
+      const isAdmin = session?.user && (session.user as { role?: string }).role === 'ADMIN'
+      if (!isAdmin) {
+        return NextResponse.json({ error: '文章未找到' }, { status: 404 })
+      }
     }
 
     await prisma.article.update({

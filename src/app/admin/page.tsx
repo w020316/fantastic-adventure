@@ -37,11 +37,18 @@ interface CategoryWithCount {
   count: number
 }
 
+const statCardColors: Record<string, string> = {
+  'cyber-neon': '#00ff9f',
+  'cyber-blue': '#00d4ff',
+  'cyber-pink': '#ff0080',
+  'cyber-yellow': '#ffe600',
+}
+
 const categoryColorValue: Record<string, string> = {
   tech: '#00ff9f',
   life: '#ff0080',
   works: '#00d4ff',
-  essay: '#ffd700',
+  essay: '#ffe600',
 }
 
 function SkeletonBlock({ className }: { className?: string }) {
@@ -171,15 +178,15 @@ export default function AdminDashboardPage() {
               >
                 <div className="flex items-center justify-between mb-3">
                   <span className="font-mono text-xs text-cyber-text-dim uppercase tracking-wider">{card.label}</span>
-                  <span className={`text-${card.color} text-lg`}>{card.icon}</span>
+                  <span className="text-lg" style={{ color: statCardColors[card.color] }}>{card.icon}</span>
                 </div>
-                <div className={`font-display text-2xl font-bold text-${card.color} mb-1`}>
+                <div className="font-display text-2xl font-bold mb-1" style={{ color: statCardColors[card.color] }}>
                   {card.value.toLocaleString()}
                 </div>
                 <div className="h-1 w-full bg-cyber-border rounded-full overflow-hidden mt-2">
                   <div
-                    className={`h-full bg-${card.color} rounded-full`}
-                    style={{ width: `${Math.min(100, (card.value / Math.max(stats?.totalViews ?? 1, 1)) * 100)}%` }}
+                    className="h-full rounded-full"
+                    style={{ width: `${Math.min(100, (card.value / Math.max(stats?.totalViews ?? 1, 1)) * 100)}%`, backgroundColor: statCardColors[card.color] }}
                   />
                 </div>
               </div>

@@ -4,27 +4,8 @@ import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { fetchArticles, fetchCategories, fetchTags } from '@/lib/api'
-
-const categoryColorMap: Record<string, string> = {
-  tech: 'cyber-tag-green',
-  life: 'cyber-tag-pink',
-  works: 'cyber-tag-blue',
-  essay: 'cyber-tag-yellow',
-}
-
-const categoryGradients: Record<string, string> = {
-  tech: 'from-emerald-900/40 via-cyan-900/30 to-teal-900/40',
-  life: 'from-rose-900/40 via-orange-900/30 to-amber-900/40',
-  works: 'from-sky-900/40 via-blue-900/30 to-indigo-900/40',
-  essay: 'from-yellow-900/40 via-amber-900/30 to-orange-900/40',
-}
-
-const categoryHexColors: Record<string, string> = {
-  tech: '#00ff88',
-  life: '#ff0080',
-  works: '#0088ff',
-  essay: '#ffcc00',
-}
+import { categoryColorMap, categoryGradients, categoryColorValue, formatDate } from '@/lib/constants'
+import { useDebounce } from '@/hooks/useDebounce'
 
 interface Article {
   id: string
@@ -56,23 +37,6 @@ interface Tag {
   name: string
   slug: string
   count: number
-}
-
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState(value)
-  useEffect(() => {
-    const timer = setTimeout(() => setDebouncedValue(value), delay)
-    return () => clearTimeout(timer)
-  }, [value, delay])
-  return debouncedValue
-}
-
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr)
-  const y = d.getFullYear()
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${y}-${m}-${day}`
 }
 
 export default function ArticlesPage() {
@@ -232,7 +196,7 @@ function ArticlesContent() {
                         全部文章 ({totalArticles})
                       </button>
                       {categoriesList.map((cat) => {
-                        const hex = categoryHexColors[cat.slug]
+                        const hex = categoryColorValue[cat.slug]
                         return (
                           <button
                             key={cat.id}

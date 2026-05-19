@@ -88,7 +88,7 @@ export default function AIChat() {
   function getContext(): string | undefined {
     if (typeof window === 'undefined') return undefined
     const pathname = window.location.pathname
-    if (pathname.includes('/posts/')) {
+    if (pathname.includes('/articles/')) {
       const h1 = document.querySelector('article h1')
       const excerpt = document.querySelector('article p')
       if (h1) {
@@ -111,10 +111,14 @@ export default function AIChat() {
 
     try {
       const context = getContext()
+      const recentMessages = messages.slice(-5).map(m => ({
+        role: m.role,
+        content: m.content
+      }))
       const res = await fetch('/api/ai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, context }),
+        body: JSON.stringify({ message, context, history: recentMessages }),
       })
 
       const data = await res.json()
