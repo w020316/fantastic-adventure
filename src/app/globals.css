@@ -671,6 +671,50 @@
     -webkit-text-size-adjust: 100%;
     -webkit-font-smoothing: antialiased;
   }
+
+  .glass-panel {
+    backdrop-filter: none !important;
+    background: rgba(18, 18, 26, 0.95) !important;
+  }
+
+  html.light-mode .glass-panel {
+    backdrop-filter: none !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+  }
+
+  .grid-bg {
+    background-image: none !important;
+  }
+
+  .neon-text,
+  .neon-text-pink,
+  .neon-text-blue {
+    text-shadow: none !important;
+  }
+
+  .cyber-card::before {
+    display: none !important;
+  }
+
+  .cyber-card:hover::before {
+    display: none !important;
+  }
+
+  .repo-card::before {
+    display: none !important;
+  }
+
+  .cyber-button::before {
+    display: none !important;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 html.light-mode {
@@ -743,6 +787,25 @@ html.light-mode .prose-cyber pre {
 html.light-mode .prose-cyber blockquote {
   background: rgba(0, 179, 119, 0.05);
   color: var(--color-cyber-text-dim);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glitch-text::before,
+  .glitch-text::after {
+    animation: none !important;
+  }
+
+  .cyber-card {
+    transition: none !important;
+  }
+
+  .cyber-button {
+    transition: none !important;
+  }
+
+  .cyber-button::before {
+    transition: none !important;
+  }
 }
 
 @layer base {

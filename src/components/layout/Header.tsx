@@ -51,7 +51,7 @@ export default function Header() {
       >
         跳转到主要内容
       </a>
-      <header className="glass-panel sticky top-0 z-40 border-b border-cyber-border" ref={menuRef}>
+      <header className="sticky top-0 z-40 border-b border-cyber-border bg-cyber-surface/95 md:backdrop-blur-md md:bg-cyber-surface/80" ref={menuRef}>
         <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
           <Link href="/home" className="font-display text-xl font-bold neon-text tracking-wider">
             CYBERBLOG
@@ -103,7 +103,7 @@ export default function Header() {
             mobileOpen ? 'max-h-80 opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <div className="glass-panel border-t border-cyber-border">
+          <div className="border-t border-cyber-border bg-cyber-surface/95 md:backdrop-blur-md md:bg-cyber-surface/80">
             {navItems.map((item) => {
               const isActive = pathname === item.href || (item.href !== '/home' && pathname.startsWith(item.href))
               return (

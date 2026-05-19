@@ -354,9 +354,9 @@ export default function HomePage() {
     <div className="min-h-screen">
       {/* Hero Section */}
       <section className="relative overflow-hidden border-b border-cyber-border">
-        <div className="absolute inset-0 bg-gradient-to-b from-cyber-neon/3 via-transparent to-transparent" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-cyber-neon/5 rounded-full blur-[120px]" />
-        <div className="absolute top-20 right-1/4 w-64 h-64 bg-cyber-pink/5 rounded-full blur-[100px]" />
+        <div className="hidden sm:block absolute inset-0 bg-gradient-to-b from-cyber-neon/3 via-transparent to-transparent" />
+        <div className="hidden sm:block absolute top-0 left-1/2 -translate-x-1/2 w-96 h-96 bg-cyber-neon/5 rounded-full blur-[120px]" />
+        <div className="hidden sm:block absolute top-20 right-1/4 w-64 h-64 bg-cyber-pink/5 rounded-full blur-[100px]" />
 
         <div className="relative max-w-6xl mx-auto px-4 py-16 sm:py-20">
           <div className="text-center mb-10" style={{ animation: 'fadeInUp 0.6s ease forwards' }}>

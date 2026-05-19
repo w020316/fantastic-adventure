@@ -159,7 +159,7 @@ export default function AIChat() {
       <button
         onClick={() => setIsOpen(!isOpen)}
         className={`fixed bottom-20 right-4 z-[9999] w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 hover:rotate-45 ${
-          isOpen ? 'rotate-45 scale-90' : 'animate-pulse'
+          isOpen ? 'rotate-45 scale-90' : ''
         }`}
         style={{
           background: isOpen
@@ -195,13 +195,13 @@ export default function AIChat() {
             ? 'opacity-100 translate-y-0 pointer-events-auto'
             : 'opacity-0 translate-y-4 pointer-events-none'
         } md:right-4 md:bottom-36 md:w-[380px] right-0 bottom-0 w-full`}
-        style={{ maxHeight: '500px' }}
+        style={{ maxHeight: 'min(500px, 70vh)' }}
       >
         <div
-          className="glass-panel flex flex-col overflow-hidden md:rounded-md rounded-none"
+          className="glass-panel flex flex-col overflow-hidden md:rounded-md rounded-t-lg"
           style={{
-            maxHeight: '500px',
-            height: '500px',
+            maxHeight: 'min(500px, 70vh)',
+            height: 'min(500px, 70vh)',
             borderColor: 'var(--color-cyber-border)',
           }}
         >
@@ -349,7 +349,7 @@ export default function AIChat() {
           )}
 
           <div
-            className="px-3 py-3 border-t shrink-0"
+            className="px-3 py-3 border-t shrink-0 pb-[env(safe-area-inset-bottom)]"
             style={{ borderColor: 'var(--color-cyber-border)' }}
           >
             <div className="flex items-center gap-2">

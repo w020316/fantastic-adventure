@@ -43,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" className="dark">
       <body className={`${inter.variable} ${jetbrainsMono.variable} ${orbitron.variable} font-body antialiased`}>
-        <div className="grid-bg min-h-screen">
+        <div className="min-h-screen md:grid-bg">
           {children}
         </div>
       </body>

@@ -359,6 +359,7 @@ function CommentSection({ articleId, initialComments }: { articleId: string; ini
 }
 
 function TableOfContents({ content }: { content: string }) {
+  const [expanded, setExpanded] = useState(false)
   const headings = useMemo(() => {
     const matches = content.match(/^#{2,3}\s+.+$/gm)
     if (!matches) return []
@@ -374,10 +375,20 @@ function TableOfContents({ content }: { content: string }) {
 
   return (
     <div className="cyber-card p-4">
-      <h3 className="section-title mb-3">
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="section-title mb-3 w-full flex items-center justify-between lg:cursor-default"
+        aria-expanded={expanded}
+      >
         <span className="neon-text">▸</span> 目录
-      </h3>
-      <nav aria-label="文章目录" className="space-y-1">
+        <svg
+          className={`w-4 h-4 text-cyber-text-dim transition-transform lg:hidden ${expanded ? 'rotate-180' : ''}`}
+          fill="none" stroke="currentColor" viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+        </svg>
+      </button>
+      <nav aria-label="文章目录" className={`space-y-1 ${expanded ? 'block' : 'hidden'} lg:block`}>
         {headings.map((heading) => (
           <a
             key={heading.id}
