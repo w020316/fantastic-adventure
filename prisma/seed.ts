@@ -155,6 +155,15 @@ async function main() {
 
   const projectsData = [
     {
+      title: '心语日记',
+      description: '基于多智能体协作的AI日记应用，通过情绪感知器、记忆管家、日记生成器和对话精灵四个智能体协同工作，实现情绪识别、记忆管理、个性化日记生成和温暖对话。支持SSE实时进度推送、ChromaDB向量记忆、在线体验版等功能。',
+      repoUrl: 'https://github.com/w020316/geren-riji',
+      demoUrl: 'https://w020316.github.io/geren-riji/',
+      techStack: ['Python', 'FastAPI', 'DeepSeek API', 'ChromaDB', 'BGE嵌入模型', 'SSE', 'JavaScript', 'localStorage'],
+      featured: true,
+      order: 0,
+    },
+    {
       title: 'CyberBlog',
       description: '赛博朋克风格全栈博客系统，基于 Next.js 16 + Prisma 6 + Tailwind CSS 4 构建，支持文章管理、评论系统、点赞互动等功能。',
       repoUrl: 'https://github.com/w020316/fantastic-adventure',

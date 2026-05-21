@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo } from 'react'
+import Link from 'next/link'
 import { fetchProjects } from '@/lib/api'
 
 const languageColorMap: Record<string, string> = {
@@ -213,6 +214,16 @@ function RepoCard({ repo, index, isPinned = false }: { repo: GitHubRepo; index: 
         )}
 
         <div className="flex items-center gap-3 pt-3 border-t border-cyber-border">
+          {repo.name === 'geren-riji' && (
+            <Link
+              href="/projects/geren-riji"
+              className="cyber-button text-xs flex items-center gap-1.5"
+              style={{ borderColor: 'var(--color-cyber-pink)', color: 'var(--color-cyber-pink)' }}
+            >
+              <ExternalLinkIcon className="w-3.5 h-3.5" />
+              查看详情
+            </Link>
+          )}
           <a
             href={repo.htmlUrl}
             target="_blank"
@@ -254,7 +265,9 @@ function DbProjectCard({ project, index }: { project: ApiProject; index: number 
       <div className="p-5 sm:p-6 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-3 mb-3">
           <h3 className="font-display text-base sm:text-lg font-bold text-cyber-text group-hover:text-cyber-neon transition-colors line-clamp-1">
-            {project.title}
+            <Link href={`/projects/${project.id}`} className="hover:underline">
+              {project.title}
+            </Link>
           </h3>
           {project.featured && (
             <span className="cyber-tag cyber-tag-yellow flex-shrink-0 text-[10px]">
