@@ -125,6 +125,7 @@ function PinIcon({ className }: { className?: string }) {
 function RepoCard({ repo, index, isPinned = false }: { repo: GitHubRepo; index: number; isPinned?: boolean }) {
   const langColor = languageColorMap[repo.language] || languageColorMap.Other
   const [hovered, setHovered] = useState(false)
+  const coverImage = repoCoverImages[repo.name]
 
   return (
     <div
@@ -154,6 +155,23 @@ function RepoCard({ repo, index, isPinned = false }: { repo: GitHubRepo; index: 
           />
         </div>
       )}
+      {coverImage && (
+        <div className="relative w-full h-40 sm:h-48 overflow-hidden">
+          <img
+            src={coverImage}
+            alt={repo.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-cyber-surface)] via-transparent to-transparent" />
+          {isPinned && (
+            <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-cyber-bg/80 backdrop-blur-sm border border-cyber-neon/30 px-2 py-1 rounded-sm">
+              <PinIcon className="w-3 h-3 text-cyber-neon" />
+              <span className="font-mono text-[10px] text-cyber-neon tracking-wider">PINNED</span>
+            </div>
+          )}
+        </div>
+      )}
       <div
         className="h-1.5 w-full"
         style={{ backgroundColor: langColor }}
@@ -161,7 +179,7 @@ function RepoCard({ repo, index, isPinned = false }: { repo: GitHubRepo; index: 
       <div className="p-5 sm:p-6 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="flex items-center gap-2 min-w-0">
-            {isPinned && (
+            {!coverImage && isPinned && (
               <PinIcon className="w-3.5 h-3.5 text-cyber-neon flex-shrink-0" />
             )}
             <h3 className="font-display text-base sm:text-lg font-bold text-cyber-text group-hover:text-cyber-neon transition-colors line-clamp-1">
@@ -224,6 +242,18 @@ function RepoCard({ repo, index, isPinned = false }: { repo: GitHubRepo; index: 
               查看详情
             </Link>
           )}
+          {repo.name === 'student-management' && (
+            <a
+              href="https://w020316.github.io/student-management/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="cyber-button text-xs flex items-center gap-1.5"
+              style={{ borderColor: 'var(--color-cyber-pink)', color: 'var(--color-cyber-pink)' }}
+            >
+              <ExternalLinkIcon className="w-3.5 h-3.5" />
+              在线体验
+            </a>
+          )}
           <a
             href={repo.htmlUrl}
             target="_blank"
@@ -234,7 +264,7 @@ function RepoCard({ repo, index, isPinned = false }: { repo: GitHubRepo; index: 
             <GitHubIcon className="w-3.5 h-3.5" />
             查看源码
           </a>
-          {repo.homepage && (
+          {repo.homepage && repo.name !== 'student-management' && (
             <a
               href={repo.homepage}
               target="_blank"
@@ -261,6 +291,23 @@ function DbProjectCard({ project, index }: { project: ApiProject; index: number 
         opacity: 0,
       }}
     >
+      {project.coverImage && (
+        <div className="relative w-full h-40 sm:h-48 overflow-hidden">
+          <img
+            src={project.coverImage}
+            alt={project.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="lazy"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[var(--color-cyber-surface)] via-transparent to-transparent" />
+          {project.featured && (
+            <div className="absolute top-3 left-3 flex items-center gap-1.5 bg-cyber-bg/80 backdrop-blur-sm border border-yellow-500/30 px-2 py-1 rounded-sm">
+              <span className="text-yellow-400 text-xs">★</span>
+              <span className="font-mono text-[10px] text-yellow-400 tracking-wider">FEATURED</span>
+            </div>
+          )}
+        </div>
+      )}
       <div className="h-1.5 w-full bg-gradient-to-r from-cyber-neon via-cyber-blue to-cyber-pink" />
       <div className="p-5 sm:p-6 flex flex-col flex-1">
         <div className="flex items-start justify-between gap-3 mb-3">
@@ -576,7 +623,15 @@ function ProjectsSkeleton() {
   )
 }
 
-const PINNED_REPO_NAMES = ['fantastic-adventure']
+const PINNED_REPO_NAMES = ['student-management', 'fantastic-adventure']
+
+const repoCoverImages: Record<string, string> = {
+  'student-management': 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=A%20sleek%20dark-themed%20student%20management%20dashboard%20with%20golden%20accent%20cards%20showing%20statistics%2C%20modern%20UI%20design%2C%20clean%20data%20tables%2C%20professional%20software%20interface%2C%20cyberpunk%20style&image_size=landscape_16_9',
+  'fantastic-adventure': 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=A%20cyberpunk%20blog%20website%20with%20neon%20green%20and%20pink%20accents%2C%20dark%20theme%2C%20matrix-style%20grid%20background%2C%20futuristic%20UI%20design%2C%20holographic%20elements&image_size=landscape_16_9',
+  'geren-riji': 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=A%20personal%20diary%20app%20with%20soft%20neon%20glow%2C%20journal%20entries%20timeline%2C%20cyberpunk%20notebook%20aesthetic%2C%20dark%20mode%20UI%2C%20digital%20journal%20interface&image_size=landscape_16_9',
+  'cautious-broccoli': 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=A%20developer%20skills%20dashboard%20with%20tech%20stack%20icons%2C%20progress%20bars%2C%20dark%20mode%20cyberpunk%20portfolio%2C%20neon%20green%20accents&image_size=landscape_16_9',
+  'demo-mx': 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=An%20AI%20chatbot%20interface%20with%20neural%20network%20visualization%2C%20futuristic%20dark%20theme%2C%20holographic%20conversation%20UI%2C%20cyberpunk%20AI%20assistant&image_size=landscape_16_9',
+}
 
 export default function ProjectsPage() {
   const [repos, setRepos] = useState<GitHubRepo[]>([])
