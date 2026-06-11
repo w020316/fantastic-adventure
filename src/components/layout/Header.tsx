@@ -10,6 +10,7 @@ const navItems = [
   { href: '/articles', label: '文章' },
   { href: '/bookmarks', label: '书签' },
   { href: '/projects', label: '作品集' },
+  { href: '/skills', label: 'Skills' },
   { href: '/about', label: '关于' },
   { href: '/history', label: '历史' },
 ]
