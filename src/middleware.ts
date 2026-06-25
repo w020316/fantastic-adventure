@@ -1,7 +1,9 @@
 import { withAuth } from 'next-auth/middleware'
 
-// Next.js 16 proxy（原 middleware）保护 /admin/* 页面路由（登录页除外）
-// API 鉴权仍由各 route handler 内的 requireAdmin() 负责
+// middleware 保护 /admin/* 页面路由（登录页除外）
+// 注意：Next.js 16 将 middleware 改名为 proxy，但 next-auth v4 的 withAuth
+// 仍依赖 middleware 约定，故保留 middleware.ts 文件名确保兼容
+// API 鉴权由各 route handler 内的 requireAdmin() 负责
 export default withAuth({
   pages: { signIn: '/admin/login' },
   callbacks: {
