@@ -8,8 +8,20 @@
 
 本项目从"赛博朋克博客系统"升级为**极简高级科技风格个人作品集**，采用深黑底 + 荧光绿品牌色，融合鼠标跟随光斑、3D 倾斜卡片、无限跑马灯等高级交互，打造可写进简历的个人数字品牌。
 
-- **线上地址**：部署至 Vercel 后更新
+- **线上地址**：[https://fantastic-adventure-gilt.vercel.app](https://fantastic-adventure-gilt.vercel.app)（Vercel，海外）/ Zeabur 部署后更新国内地址
 - **GitHub**：[w020316/fantastic-adventure](https://github.com/w020316/fantastic-adventure)
+
+## 安全特性
+
+| 特性 | 说明 |
+|------|------|
+| 路由级鉴权 | `middleware.ts` 保护所有 `/admin/*` 页面（登录页除外），非 ADMIN token 重定向到登录页 |
+| API 鉴权 | 写操作（POST/PATCH/DELETE）均由 `requireAdmin()` 校验 session，contact GET 不再裸奔 |
+| 输入校验 | Zod schema 校验所有 API 入参（articles/categories/tags/comments/contact） |
+| XSS 防护 | 评论内容、联系表单均经 `sanitizeText` / `escapeHtml` 转义，邮件 HTML 拼接也转义 |
+| 限流 | 评论 5次/分钟、联系表单 5次/小时，Map 带大小上限（1000-2000）防内存泄漏 |
+| 反垃圾 | 联系表单 honeypot 字段（前端 + 后端双重校验） |
+| 密码安全 | bcryptjs 哈希存储，JWT session（7天） |
 
 ## 技术栈
 
@@ -22,7 +34,7 @@
 | 认证 | NextAuth.js |
 | 动画 | Framer Motion / CSS Animations |
 | 邮件 | Resend |
-| 部署 | Vercel |
+| 部署 | Vercel（海外）/ Zeabur（国内访问优化） |
 | 图标 | 内联 SVG |
 
 ## 核心功能
@@ -117,15 +129,17 @@ SiteProfile   站点资料（品牌名/作者/定位/社交链接/主题配置�
 
 ### 环境变量
 
-创建 `.env` 文件：
+参考 `.env.example`，创建 `.env` 文件（生产环境在部署平台配置）：
 
 ```env
+# 数据库（Neon / Supabase / Zeabur 内置 PostgreSQL）
 DATABASE_URL="postgresql://用户名:密码@主机:5432/数据库名?sslmode=require"
-NEXTAUTH_SECRET="你的随机密钥"
+
+# NextAuth 认证（必填）
+NEXTAUTH_SECRET="用 openssl rand -base64 32 生成"
 NEXTAUTH_URL="http://localhost:3000"
-JWT_SECRET="你的JWT密钥"
-JWT_REFRESH_SECRET="你的刷新密钥"
-# 可选：邮件服务
+
+# 邮件服务（可选，不配置则联系表单仅入库）
 RESEND_API_KEY="re_xxx"
 RESEND_FROM_EMAIL="onboarding@resend.dev"
 CONTACT_EMAIL="1181264839@qq.com"
@@ -161,12 +175,33 @@ npm run dev
 
 ## 部署
 
-### Vercel 部署
+### 方案一：Vercel（海外访问，国内较慢）
 
 1. Fork 或推送到 GitHub
 2. 在 [Vercel](https://vercel.com) 导入仓库
 3. 配置环境变量（同上 `.env`）
 4. 部署，Vercel 会自动执行 `prisma generate && next build`
+
+### 方案二：Zeabur（国内访问优化，推荐）
+
+Vercel 在国内访问速度慢且手机未翻墙可能打不开，Zeabur 有香港/东京节点，国内可直连。
+
+1. 注册 [Zeabur](https://zeabur.com)（可用 GitHub 登录）
+2. New Project → 选择 `fantastic-adventure` 仓库
+3. Zeabur 自动识别 Next.js 框架，无需额外配置
+4. 在服务的 Variables 页配置环境变量（同 `.env`）：
+   - `DATABASE_URL`：可创建 Zeabur 内置 PostgreSQL，或继续用 Neon
+   - `NEXTAUTH_SECRET`：生成随机密钥
+   - `NEXTAUTH_URL`：改为 Zeabur 分配的域名（如 `https://xxx.zeabur.app`）
+   - 可选：`RESEND_API_KEY` / `CONTACT_EMAIL` 等
+5. 数据库初始化（在 Zeabur 的 Shell 中执行）：
+   ```bash
+   npx prisma db push
+   npx prisma db seed
+   ```
+6. 部署完成后用 Zeabur 分配的 `xxx.zeabur.app` 域名访问，国内速度显著优于 Vercel
+
+> **数据库选择**：Zeabur 内置 PostgreSQL（免费额度）或 [Neon](https://neon.tech)（免费 0.5GB，冷启动快）均可，二选一。
 
 ### 数据库
 
@@ -182,8 +217,9 @@ src/
 │   │   ├── articles/     # 文章列表与详情
 │   │   ├── bookmarks/    # 书签
 │   │   ├── history/      # 阅读历史
-│   │   ├── home/         # 博客首页
-│   │   └── projects/     # 项目展示
+│   │   ├── home/         # 已重定向到 /
+│   │   ├── projects/     # 项目展示
+│   │   └── skills/       # 技能展示
 │   ├── admin/            # 管理后台
 │   │   ├── articles/     # 文章管理
 │   │   ├── categories/   # 分类管理
@@ -197,6 +233,7 @@ src/
 │   ├── page.tsx          # 首页（单页作品集）
 │   ├── globals.css       # 全局样式与设计系统
 │   ├── sitemap.ts        # 站点地图
+│   ├── not-found.tsx     # 404 页面
 │   └── robots.ts         # 爬虫规则
 ├── components/
 │   ├── landing/          # 首页区块组件
@@ -214,13 +251,17 @@ src/
 │   └── layout/           # 布局组件
 │       ├── Header.tsx
 │       └── Footer.tsx
-└── lib/
-    ├── prisma.ts         # Prisma 客户端
-    ├── api.ts            # API 工具函数
-    └── utils.ts          # 通用工具
+├── lib/
+│   ├── prisma.ts         # Prisma 客户端
+│   ├── api.ts            # API 工具函数
+│   ├── auth-guard.ts     # requireAdmin 鉴权工具
+│   ├── validations.ts    # Zod 校验 schema
+│   └── utils.ts          # 通用工具
+└── middleware.ts         # 路由鉴权中间件（保护 /admin/*）
 prisma/
 ├── schema.prisma         # 数据模型
 └── seed.ts               # 种子数据
+.env.example              # 环境变量示例
 ```
 
 ## 真实项目展示
