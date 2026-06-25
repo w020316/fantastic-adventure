@@ -4,15 +4,17 @@ import { commentSchema } from '@/lib/validations'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 
+// 内存限流（带大小上限与自动清理）
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
 const RATE_LIMIT_WINDOW = 60 * 1000
 const RATE_LIMIT_MAX = 5
 const RATE_LIMIT_CLEANUP_INTERVAL = 5 * 60 * 1000
+const RATE_LIMIT_MAX_SIZE = 2000 // 防止内存无限增长
 let lastCleanup = Date.now()
 
 function checkRateLimit(ip: string | null): boolean {
   const now = Date.now()
-  if (now - lastCleanup > RATE_LIMIT_CLEANUP_INTERVAL) {
+  if (now - lastCleanup > RATE_LIMIT_CLEANUP_INTERVAL || rateLimitMap.size > RATE_LIMIT_MAX_SIZE) {
     for (const [key, entry] of rateLimitMap) {
       if (now > entry.resetTime) {
         rateLimitMap.delete(key)
@@ -46,6 +48,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const articleId = searchParams.get('articleId')
     const status = searchParams.get('status')
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1'))
+    const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') || '50')))
 
     const session = await getServerSession(authOptions)
     const isAdmin = session?.user && (session.user as { role?: string }).role === 'ADMIN'
@@ -56,18 +60,26 @@ export async function GET(request: NextRequest) {
     if (!isAdmin) where.status = 'APPROVED'
     if (!isAdmin) where.parentId = null
 
-    const comments = await prisma.comment.findMany({
-      where,
-      include: {
-        replies: {
-          where: !isAdmin ? { status: 'APPROVED' } : undefined,
-          orderBy: { createdAt: 'asc' },
+    const [comments, total] = await Promise.all([
+      prisma.comment.findMany({
+        where,
+        include: {
+          replies: {
+            where: !isAdmin ? { status: 'APPROVED' } : undefined,
+            orderBy: { createdAt: 'asc' },
+          },
         },
-      },
-      orderBy: { createdAt: 'desc' },
-    })
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      prisma.comment.count({ where }),
+    ])
 
-    return NextResponse.json({ comments })
+    return NextResponse.json({
+      comments,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    })
   } catch (error) {
     console.error('GET /api/comments error:', error)
     return NextResponse.json({ error: '获取评论失败' }, { status: 500 })
@@ -76,9 +88,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-      || request.headers.get('x-real-ip')
-      || null
+    const ip =
+      request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+      request.headers.get('x-real-ip') ||
+      null
 
     if (!checkRateLimit(ip)) {
       return NextResponse.json({ error: '操作过于频繁，请稍后再试' }, { status: 429 })

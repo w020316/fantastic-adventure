@@ -187,9 +187,9 @@ model SiteProfile {
   twitter         String?
   linkedin        String?
   available       Boolean  @default(true)
-  yearsExp        Int      @default(3)
-  projectCount    Int      @default(20)
-  userReach       String   @default("10万+")
+  yearsExp        Int      @default(0)
+  projectCount    Int      @default(8)
+  userReach       String   @default("1000+")
   uptime          String   @default("99.9%")
   spotlightCursor Boolean  @default(true)
   brandColor      String   @default("#ccff00")

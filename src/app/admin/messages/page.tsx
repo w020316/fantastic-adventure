@@ -31,14 +31,11 @@ export default function AdminMessagesPage() {
 
   async function fetchMessages() {
     try {
-      const res = await fetch('/api/contact', {
-        headers: {
-          authorization: 'admin-session',
-        },
-      })
+      // NextAuth session 通过 cookie 自动鉴权，无需手动加 authorization header
+      const res = await fetch('/api/contact')
       if (res.ok) {
         const data = await res.json()
-        setMessages(data)
+        setMessages(data.messages || data || [])
       }
     } catch (err) {
       console.error('获取消息失败:', err)

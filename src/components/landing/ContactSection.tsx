@@ -34,8 +34,9 @@ export default function ContactSection() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
-    // HoneyPot 检查
+    // HoneyPot 命中：静默成功，不实际提交（前端拦截 + 后端二次校验）
     if (form.website) {
+      setStatus('success')
       return
     }
 
@@ -60,10 +61,12 @@ export default function ContactSection() {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // 发送 website 字段，后端 honeypot 作为第二道防线（防绕过 JS 的机器人）
         body: JSON.stringify({
           name: form.name,
           email: form.email,
           message: form.message,
+          website: form.website,
         }),
       })
 
