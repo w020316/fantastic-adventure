@@ -27,14 +27,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  // 登录页不经过鉴权布局
+  const isLoginPage = pathname === '/admin/login'
+
   useEffect(() => {
+    if (isLoginPage) return
     if (status === 'unauthenticated') {
       router.push('/admin/login')
     }
     if (status === 'authenticated' && (session?.user as { role?: string })?.role !== 'ADMIN') {
       router.push('/admin/login')
     }
-  }, [status, session, router])
+  }, [status, session, router, isLoginPage])
 
   useEffect(() => {
     if (sidebarOpen) {
@@ -46,6 +50,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       document.body.style.overflow = ''
     }
   }, [sidebarOpen])
+
+  // 登录页直接渲染，不加侧边栏和鉴权
+  if (isLoginPage) {
+    return <>{children}</>
+  }
 
   if (status === 'loading') {
     return (

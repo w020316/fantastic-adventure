@@ -26,7 +26,7 @@ export default function NotFound() {
         {'// 页面未找到或已被移除'}
       </p>
       <a
-        href="/home"
+        href="/"
         style={{
           border: '1px solid #00ff9f',
           color: '#00ff9f',

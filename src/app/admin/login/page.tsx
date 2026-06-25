@@ -49,7 +49,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="cyber-input text-sm"
               style={{ paddingLeft: '1rem' }}
-              placeholder="admin@cyberblog.dev"
+              placeholder="admin@xiaowu.dev"
               required
             />
           </div>
@@ -84,7 +84,7 @@ export default function AdminLoginPage() {
         </form>
 
         <div className="mt-6 text-center">
-          <a href="/home" className="font-mono text-xs text-cyber-text-dim hover:text-cyber-neon transition-colors">
+          <a href="/" className="font-mono text-xs text-cyber-text-dim hover:text-cyber-neon transition-colors">
             ← 返回首页
           </a>
         </div>

@@ -19,7 +19,7 @@ class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: bo
         <div style={{padding: '2rem', textAlign: 'center', color: '#e0e0e0', backgroundColor: '#0a0a0f', minHeight: '100vh'}}>
           <h2 style={{fontFamily: 'monospace', color: '#ff0080'}}>SYSTEM.ERROR</h2>
           <p style={{fontFamily: 'monospace', fontSize: '14px', color: '#8b8fa3'}}>页面加载出错，请刷新重试</p>
-          <a href="/home" style={{fontFamily: 'monospace', color: '#00ff9f', fontSize: '14px'}}>→ 返回首页</a>
+          <a href="/" style={{fontFamily: 'monospace', color: '#00ff9f', fontSize: '14px'}}>→ 返回首页</a>
         </div>
       )
     }
