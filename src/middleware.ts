@@ -7,6 +7,11 @@ import { getToken } from 'next-auth/jwt'
 // 兼容 Next.js 16（next-auth v4 的 withAuth 在 Next.js 16 中失效）
 // API 鉴权仍由各 route handler 内的 requireAdmin() 负责
 export async function middleware(request: NextRequest) {
+  // 登录页直接放行（避免无限重定向）
+  if (request.nextUrl.pathname === '/admin/login') {
+    return NextResponse.next()
+  }
+
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
@@ -23,6 +28,6 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // 匹配所有 /admin/* 但排除 /admin/login（避免登录页被拦截导致无限重定向）
-  matcher: ['/admin/((?!login).*)'],
+  // 匹配 /admin 及所有子路径，登录页在函数内放行
+  matcher: ['/admin/:path*'],
 }
