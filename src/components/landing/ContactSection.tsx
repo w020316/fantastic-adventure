@@ -216,8 +216,8 @@ export default function ContactSection() {
               <div className="mt-10 pt-8 border-t border-[#0a0a0a]/10 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
                 <div>
                   <p className="font-mono text-xs text-[#0a0a0a]/50 mb-1">EMAIL</p>
-                  <a href="mailto:hello@xiaowu.dev" className="text-sm font-medium text-[#0a0a0a] hover:underline">
-                    hello@xiaowu.dev
+                  <a href="mailto:1181264839@qq.com" className="text-sm font-medium text-[#0a0a0a] hover:underline">
+                    1181264839@qq.com
                   </a>
                 </div>
                 <div>

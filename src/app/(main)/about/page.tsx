@@ -1,40 +1,40 @@
 'use client'
 
 const stats = [
-  { value: '3+', label: '年经验', hint: '全栈开发' },
-  { value: '20+', label: '项目', hint: '已交付' },
-  { value: '10万+', label: '用户触达', hint: '累计' },
-  { value: '99.9%', label: '可用性', hint: '生产服务' },
+  { value: '8+', label: '独立项目', hint: '完整开发' },
+  { value: '4+', label: '技术栈', hint: 'Vue/React/Python/uni-app' },
+  { value: '3+', label: '上线部署', hint: 'Vercel/GitHub Pages' },
+  { value: 'AI', label: '/CV/全栈', hint: '多领域实践' },
 ]
 
 const capabilities = [
   {
-    title: '前端',
-    desc: '以 Next.js / React 为核心，构建高性能、可访问、视觉精致的产品界面。',
-    skills: ['Next.js', 'React', 'TypeScript', 'Tailwind CSS', 'Framer Motion'],
+    title: '前端工程',
+    desc: '从 Vue 到 Next.js，构建高性能、可访问、视觉精致的产品界面。',
+    skills: ['Next.js', 'React', 'Vue', 'TypeScript', 'Tailwind CSS'],
   },
   {
-    title: '后端',
-    desc: '基于 Node.js 与 Prisma 设计可靠的 API 与数据模型，覆盖鉴权、缓存与任务队列。',
-    skills: ['Node.js', 'Prisma', 'PostgreSQL', 'NextAuth', 'Redis'],
+    title: '后端与数据库',
+    desc: '基于 Prisma 与 PostgreSQL 设计可靠的 API 与数据模型，覆盖鉴权与部署。',
+    skills: ['Node.js', 'Prisma', 'PostgreSQL', 'NextAuth', 'Vercel'],
   },
   {
-    title: 'AI',
-    desc: '围绕 LLM 与 RAG 构建可落地的智能应用，关注检索质量与上下文工程。',
-    skills: ['LangChain', 'RAG', 'Embedding', 'Prompt Engineering', 'OpenAI API'],
+    title: 'AI 与计算机视觉',
+    desc: '从 YOLO 目标检测到 RAG 知识库，将 AI 能力落地为可用产品。',
+    skills: ['Python', 'YOLO', 'OpenCV', 'RAG', 'PyTorch'],
   },
   {
-    title: 'DevOps',
-    desc: '从 CI/CD 到容器化部署，保障服务稳定上线与持续迭代。',
-    skills: ['Docker', 'GitHub Actions', 'Vercel', 'Nginx', 'Linux'],
+    title: '工程化与部署',
+    desc: '使用 GitHub Actions CI/CD、Vercel 自动部署，保障项目持续迭代上线。',
+    skills: ['GitHub Actions', 'Vercel', 'Git', 'uni-app'],
   },
 ]
 
 const timeline = [
-  { year: '2023', title: '开始全栈开发之旅', desc: '系统学习前端与后端体系，独立交付第一个全栈应用。' },
-  { year: '2024', title: '深入 AI 应用开发', desc: '构建 RAG 系统，探索 LLM 在业务场景中的落地。' },
-  { year: '2025', title: '开源个人作品集引擎', desc: '将个人品牌站点沉淀为可复用的作品集引擎并开源。' },
-  { year: '2026', title: '持续探索 AI 与 Web 的结合', desc: '聚焦智能体与 Web 体验的融合，打磨可用的产品。' },
+  { year: '2024', title: '入门全栈开发', desc: '系统学习 Vue 与 Node.js，独立完成多个前端项目与电商实战。' },
+  { year: '2025', title: '深入 AI 与全栈', desc: '开发情侣日记全栈应用（Next.js + Prisma + Vercel），探索 RAG 知识库。' },
+  { year: '2026 上', title: '计算机视觉实践', desc: '基于 YOLO 构建食品安全检测系统，完成模型训练与 Web 部署。' },
+  { year: '2026 下', title: '作品集系统上线', desc: '将个人项目沉淀为可复用的数字品牌作品集系统，本站即成果。' },
 ]
 
 const socials = [
@@ -49,7 +49,7 @@ const socials = [
   },
   {
     label: 'Email',
-    href: 'mailto:hello@xiao-wu.dev',
+    href: 'mailto:1181264839@qq.com',
     icon: (
       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
@@ -73,7 +73,7 @@ export default function AboutPage() {
               关于<span className="neon-text">我</span>
             </h1>
             <p className="font-mono text-sm sm:text-base text-[var(--color-text-secondary)] tracking-wider">
-              全栈工程师 · 周末（Cris）
+              在校大学生 · 全栈开发实践者 · 周末（Cris）
             </p>
           </div>
         </div>
@@ -92,7 +92,7 @@ export default function AboutPage() {
               把前沿技术变成<span className="neon-text">简洁、优雅、可落地</span>的解决方案。
             </p>
             <p className="mt-5 text-sm sm:text-base text-[var(--color-text-secondary)] leading-relaxed max-w-2xl">
-              我是周末（Cris），一名全栈工程师。专注用工程化的方式把想法真正实现出来——从前端体验、后端服务到 AI 能力，端到端交付可靠的产品。
+              我是周末（Cris），一名在校大学生。通过独立项目实践全栈开发与 AI 应用——从前端界面、后端服务到计算机视觉，把每个想法都做成可以真正运行的产品。
             </p>
           </div>
         </section>

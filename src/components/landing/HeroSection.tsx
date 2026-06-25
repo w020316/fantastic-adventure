@@ -114,7 +114,7 @@ export default function HeroSection() {
         style={{ animation: 'fadeInUp 0.8s ease-out 0.3s both' }}
       >
         <p className="text-lg sm:text-xl text-white font-medium">
-          全栈工程师
+          在校大学生 · 全栈开发实践者
         </p>
         <p className="mt-2 text-sm sm:text-base text-[#888] leading-relaxed">
           用代码把想法真正实现出来
@@ -152,14 +152,14 @@ export default function HeroSection() {
       <div className="absolute top-24 left-4 sm:left-8 z-10 hidden sm:block" style={{ animation: 'fadeInUp 1s ease-out 0.9s both' }}>
         <div className="flex items-center gap-2">
           <span className="w-2 h-2 bg-[#ccff00] rounded-full animate-pulse" />
-          <span className="font-mono text-xs text-[#555]">AVAILABLE FOR WORK</span>
+          <span className="font-mono text-xs text-[#555]">OPEN TO INTERNSHIP</span>
         </div>
       </div>
 
       <div className="absolute top-24 right-4 sm:right-8 z-10 hidden sm:block" style={{ animation: 'fadeInUp 1s ease-out 1s both' }}>
         <p className="font-mono text-xs text-[#555] text-right">
           BASED IN CHINA<br />
-          <span className="text-[#888]">FULL STACK DEVELOPER</span>
+          <span className="text-[#888]">CS STUDENT · DEVELOPER</span>
         </p>
       </div>
     </section>

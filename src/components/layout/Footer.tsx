@@ -85,11 +85,11 @@ export default function Footer() {
               <p className="text-[#888] text-sm leading-relaxed">
                 用代码把想法真正实现出来。
                 <br />
-                全栈工程师 · 项目 · 文章 · 合作
+                在校大学生 · 全栈开发实践者
               </p>
               <div className="mt-4 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 bg-[#ccff00] rounded-full animate-pulse" />
-                <span className="font-mono text-xs text-[#555]">AVAILABLE FOR WORK</span>
+                <span className="font-mono text-xs text-[#555]">OPEN TO INTERNSHIP</span>
               </div>
             </div>
 
