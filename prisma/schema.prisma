@@ -114,19 +114,89 @@ enum CommentStatus {
 }
 
 model Project {
+  id           String   @id @default(cuid())
+  title        String
+  subtitle     String?  // 一句话项目定位
+  description  String
+  impact       String?  // 项目成果/业务价值
+  metrics      Json?    // [{ label, value, suffix, display }]
+  coverImage   String?
+  demoUrl      String?
+  repoUrl      String?
+  caseStudyUrl String?  // 详情页或外部案例
+  techStack    String[]
+  featured     Boolean  @default(false)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("projects")
+}
+
+/// 能力卡片 - 首页 Capability 区块数据
+model Capability {
   id          String   @id @default(cuid())
   title       String
   description String
-  coverImage  String?
-  demoUrl     String?
-  repoUrl     String?
-  techStack   String[]
-  featured    Boolean  @default(false)
+  icon        String   // SVG 名称或图标标识
+  skills      String[] // 技能标签列表
   order       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  @@map("projects")
+  @@map("capabilities")
+}
+
+/// 联系表单提交记录
+model ContactMessage {
+  id        String           @id @default(cuid())
+  name      String
+  email     String
+  message   String
+  ip        String?
+  status    ContactStatus    @default(NEW)
+  reply     String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("contact_messages")
+}
+
+enum ContactStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+/// 个人资料与站点配置（单行记录）
+model SiteProfile {
+  id              String   @id @default(cuid())
+  brandName       String   @default("XIAO/WU")
+  authorNameCn    String   @default("周末")
+  authorNameEn    String   @default("Cris")
+  tagline         String   @default("用代码把想法真正实现出来")
+  role            String   @default("全栈工程师")
+  bio             String?
+  avatar          String?
+  location        String   @default("China")
+  email           String?
+  github          String?
+  twitter         String?
+  linkedin        String?
+  available       Boolean  @default(true)
+  yearsExp        Int      @default(3)
+  projectCount    Int      @default(20)
+  userReach       String   @default("10万+")
+  uptime          String   @default("99.9%")
+  spotlightCursor Boolean  @default(true)
+  brandColor      String   @default("#ccff00")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("site_profile")
 }
 
 model SiteStats {

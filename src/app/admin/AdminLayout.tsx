@@ -11,6 +11,8 @@ const navItems = [
   { label: '分类标签', href: '/admin/categories', icon: '🏷' },
   { label: '评论审核', href: '/admin/comments', icon: '◈' },
   { label: '项目管理', href: '/admin/projects', icon: '◆' },
+  { label: '联系消息', href: '/admin/messages', icon: '✉' },
+  { label: '站点资料', href: '/admin/profile', icon: '👤' },
   { label: '系统设置', href: '/admin/settings', icon: '⚙️' },
 ]
 
@@ -75,7 +77,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }`}
       >
         <div className="p-5 border-b border-cyber-border">
-          <h1 className="font-display text-lg font-bold neon-text">CYBERBLOG</h1>
+          <h1 className="font-display text-lg font-bold neon-text">XIAO/WU</h1>
           <p className="font-mono text-xs text-cyber-text-dim mt-1">{'// 管理后台'}</p>
         </div>
 

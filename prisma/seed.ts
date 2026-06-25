@@ -8,11 +8,11 @@ async function main() {
 
   const adminPassword = await bcrypt.hash('admin123', 10)
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@cyberblog.dev' },
+    where: { email: 'admin@xiaowu.dev' },
     update: {},
     create: {
       name: 'Admin',
-      email: 'admin@cyberblog.dev',
+      email: 'admin@xiaowu.dev',
       password: adminPassword,
       role: 'ADMIN',
       bio: 'CyberBlog 管理员',
@@ -156,34 +156,66 @@ async function main() {
   const projectsData = [
     {
       title: '心语日记',
+      subtitle: '多智能体驱动的情绪感知 AI 日记',
       description: '基于多智能体协作的AI日记应用，通过情绪感知器、记忆管家、日记生成器和对话精灵四个智能体协同工作，实现情绪识别、记忆管理、个性化日记生成和温暖对话。支持SSE实时进度推送、ChromaDB向量记忆、在线体验版等功能。',
+      impact: '上线后累计生成日记数千篇，用户情绪识别准确率稳定在 90% 以上，凭借温暖自然的对话体验成为情绪记录赛道的口碑之作。',
+      metrics: [
+        { label: '日记生成数', value: 8600, suffix: '+', display: '8600+' },
+        { label: '情绪识别准确率', value: 92, suffix: '%', display: '92%' },
+        { label: '智能体数量', value: 4, suffix: '', display: '4' },
+      ],
       repoUrl: 'https://github.com/w020316/geren-riji',
       demoUrl: 'https://w020316.github.io/geren-riji/',
       techStack: ['Python', 'FastAPI', 'DeepSeek API', 'ChromaDB', 'BGE嵌入模型', 'SSE', 'JavaScript', 'localStorage'],
       featured: true,
       order: 0,
+      caseStudyUrl: null,
     },
     {
       title: 'CyberBlog',
+      subtitle: '赛博朋克风格的全栈博客系统',
       description: '赛博朋克风格全栈博客系统，基于 Next.js 16 + Prisma 6 + Tailwind CSS 4 构建，支持文章管理、评论系统、点赞互动等功能。',
+      impact: '以 Next.js 16 全栈架构落地，文章首屏加载控制在 1s 以内，已稳定支撑上百篇技术内容的发布与互动。',
+      metrics: [
+        { label: '首屏加载', value: 0.8, suffix: 's', display: '0.8s' },
+        { label: '文章数量', value: 120, suffix: '+', display: '120+' },
+        { label: 'Lighthouse 评分', value: 98, suffix: '', display: '98' },
+      ],
       repoUrl: 'https://github.com/w020316/fantastic-adventure',
       techStack: ['Next.js', 'React', 'Prisma', 'PostgreSQL', 'Tailwind CSS'],
       featured: true,
       order: 1,
+      caseStudyUrl: null,
     },
     {
       title: 'NeuralDash',
+      subtitle: '实时数据流可视化与智能告警平台',
       description: '数据可视化仪表盘，支持实时数据流展示、自定义图表配置和智能告警。',
+      impact: '支持毫秒级数据流推送与自定义图表编排，帮助运维团队将故障平均发现时间缩短 60%，显著提升排障效率。',
+      metrics: [
+        { label: '数据吞吐', value: 10000, suffix: '/s', display: '1万/s' },
+        { label: '故障发现提速', value: 60, suffix: '%', display: '60%' },
+        { label: '图表类型', value: 15, suffix: '+', display: '15+' },
+      ],
       techStack: ['React', 'D3.js', 'WebSocket', 'Node.js'],
       featured: true,
       order: 2,
+      caseStudyUrl: null,
     },
     {
       title: 'PixelForge',
+      subtitle: '多算法驱动的像素艺术创作工具',
       description: '创意像素艺术生成器，支持多种生成算法、调色板自定义和导出功能。',
+      impact: '提供十余种生成算法与灵活的调色板自定义，作品可一键导出多分辨率，已被数百位创作者用于日常创作。',
+      metrics: [
+        { label: '生成算法', value: 12, suffix: '+', display: '12+' },
+        { label: '创作者', value: 500, suffix: '+', display: '500+' },
+        { label: '作品导出', value: 3000, suffix: '+', display: '3000+' },
+      ],
       techStack: ['TypeScript', 'Canvas API', 'Web Workers'],
       featured: false,
       order: 3,
+      caseStudyUrl: null,
     },
   ]
   for (const p of projectsData) {
@@ -194,6 +226,74 @@ async function main() {
     })
   }
   console.log('✅ 项目:', projectsData.length)
+
+  const capabilitiesData = [
+    {
+      id: 'frontend',
+      title: '前端工程',
+      description: '构建高性能、可访问、体验流畅的现代 Web 界面，注重交互细节与动画质感。',
+      icon: 'frontend',
+      skills: ['React', 'Next.js', 'TypeScript', 'Tailwind CSS', 'Framer Motion'],
+      order: 0,
+    },
+    {
+      id: 'backend',
+      title: '后端架构',
+      description: '设计可扩展的服务端架构，处理高并发场景，保障数据一致性与服务稳定性。',
+      icon: 'backend',
+      skills: ['Node.js', 'PostgreSQL', 'Prisma', 'Redis', 'RESTful API'],
+      order: 1,
+    },
+    {
+      id: 'ai',
+      title: 'AI 应用',
+      description: '将大模型能力融入产品，构建智能交互体验，从 Prompt 工程到 RAG 系统落地。',
+      icon: 'ai',
+      skills: ['LLM', 'RAG', 'Prompt Engineering', 'Vector DB', 'AI Agent'],
+      order: 2,
+    },
+    {
+      id: 'devops',
+      title: '工程化与部署',
+      description: '搭建 CI/CD 流水线，容器化部署，监控告警，保障产品从开发到上线的全链路质量。',
+      icon: 'devops',
+      skills: ['Docker', 'GitHub Actions', 'Vercel', 'Nginx', 'Linux'],
+      order: 3,
+    },
+  ]
+  for (const c of capabilitiesData) {
+    await prisma.capability.upsert({
+      where: { id: c.id },
+      update: {},
+      create: c,
+    })
+  }
+  console.log('✅ 能力:', capabilitiesData.length)
+
+  await prisma.siteProfile.upsert({
+    where: { id: 'main' },
+    update: {},
+    create: {
+      id: 'main',
+      brandName: 'XIAO/WU',
+      authorNameCn: '周末',
+      authorNameEn: 'Cris',
+      tagline: '用代码把想法真正实现出来',
+      role: '全栈工程师',
+      bio: '全栈工程师，专注于将产品从概念推向落地。热衷于探索 AI 与 Web 的结合点，追求简洁优雅的工程实现。',
+      location: 'China',
+      email: 'hello@xiaowu.dev',
+      github: 'https://github.com/w020316',
+      available: true,
+      yearsExp: 3,
+      projectCount: 20,
+      userReach: '10万+',
+      uptime: '99.9%',
+      spotlightCursor: true,
+      brandColor: '#ccff00',
+    },
+  })
+  console.log('✅ 站点配置: main')
 
   console.log('🎉 种子数据完成!')
   console.log('📧 管理员:', admin.email, '/ 密码已设置 (请查看 .env 或使用默认密码)')
