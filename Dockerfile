@@ -51,5 +51,6 @@ USER nextjs
 
 EXPOSE 3000
 
-# 启动前自动执行 prisma migrate，然后启动 Next.js
-CMD ["sh", "-c", "npx prisma db push --skip-generate && node server.js"]
+# 启动前自动执行 prisma db push，然后启动 Next.js
+# 使用 node_modules 内 prisma 入口避免 npx 找不到命令
+CMD ["sh", "-c", "node ./node_modules/prisma/build/index.js db push --skip-generate && node server.js"]
