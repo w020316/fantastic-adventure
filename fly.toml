@@ -1,27 +1,34 @@
-# Fly.io 配置文件
-# 部署时 flyctl 会自动读取此文件
+# fly.toml app configuration file generated for fantastic-adventure on 2026-06-27T08:03:42Z
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
 
-app = "fantastic-adventure"
-primary_region = "hkg"  # 香港节点，国内访问最快
+app = 'fantastic-adventure'
+primary_region = 'sin'
 
 [build]
 
 [http_service]
   internal_port = 3000
   force_https = true
-  auto_stop_machines = false  # 不自动停机，保持 7x24 在线
+  auto_stop_machines = 'off'
   auto_start_machines = true
-  min_machines_running = 1    # 至少保持 1 台运行
+  min_machines_running = 1
 
   [http_service.concurrency]
-    type = "requests"
+    type = 'requests'
     hard_limit = 250
     soft_limit = 200
 
-# 检查健康状态
-[[http_service.checks]]
-  interval = "30s"
-  timeout = "5s"
-  grace_period = "10s"
-  method = "GET"
-  path = "/"
+  [[http_service.checks]]
+    interval = '30s'
+    timeout = '5s'
+    grace_period = '10s'
+    method = 'GET'
+    path = '/'
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1
+  memory_mb = 1024
