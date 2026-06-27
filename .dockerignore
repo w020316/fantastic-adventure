@@ -13,3 +13,7 @@ fly.toml
 README.md
 .fly
 docs
+*.mp4
+*.zip
+*.tar
+*.gz
