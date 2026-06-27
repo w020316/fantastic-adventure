@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { requireAdmin } from '@/lib/auth-guard'
 
 // 获取站点资料
 export async function GET() {
@@ -23,9 +24,13 @@ export async function GET() {
   }
 }
 
-// 更新站点资料
+// 更新站点资料（需要管理员权限）
 export async function PUT(request: NextRequest) {
   try {
+    // 鉴权：仅管理员可修改站点资料
+    const authError = await requireAdmin()
+    if (authError) return authError
+
     const body = await request.json()
 
     // 白名单字段

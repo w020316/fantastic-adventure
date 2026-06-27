@@ -13,22 +13,41 @@ function getClientIP(request: NextRequest): string {
 }
 
 function checkRateLimit(ip: string): boolean {
+  // 每分钟限流
   const globalMap = (globalThis as Record<string, unknown>).__aiRateLimit as Map<string, { count: number; resetAt: number }> | undefined
   if (!globalMap) {
     const map = new Map<string, { count: number; resetAt: number }>()
     ;(globalThis as Record<string, unknown>).__aiRateLimit = map
     const now = Date.now()
     map.set(ip, { count: 1, resetAt: now + 60000 })
-    return true
+  } else {
+    const now = Date.now()
+    const entry = globalMap.get(ip)
+    if (!entry || now > entry.resetAt) {
+      globalMap.set(ip, { count: 1, resetAt: now + 60000 })
+    } else {
+      entry.count++
+      if (entry.count > 5) return false
+    }
   }
-  const now = Date.now()
-  const entry = globalMap.get(ip)
-  if (!entry || now > entry.resetAt) {
-    globalMap.set(ip, { count: 1, resetAt: now + 60000 })
-    return true
+
+  // 每日上限（50次/天/IP）
+  const dailyMap = (globalThis as Record<string, unknown>).__aiDailyLimit as Map<string, { count: number; date: string }> | undefined
+  const today = new Date().toISOString().split('T')[0]
+  if (!dailyMap) {
+    const map = new Map<string, { count: number; date: string }>()
+    ;(globalThis as Record<string, unknown>).__aiDailyLimit = map
+    map.set(ip, { count: 1, date: today })
+  } else {
+    const entry = dailyMap.get(ip)
+    if (!entry || entry.date !== today) {
+      dailyMap.set(ip, { count: 1, date: today })
+    } else {
+      entry.count++
+      if (entry.count > 50) return false
+    }
   }
-  entry.count++
-  return entry.count <= 10
+  return true
 }
 
 export async function POST(request: NextRequest) {

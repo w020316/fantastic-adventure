@@ -1,5 +1,26 @@
 import type { Metadata, Viewport } from 'next'
+import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google'
+import { Toaster } from 'sonner'
 import './globals.css'
+
+// 字体加载
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+})
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ['latin'],
+  variable: '--font-space-grotesk',
+  display: 'swap',
+})
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  variable: '--font-jetbrains-mono',
+  display: 'swap',
+})
 
 export const metadata: Metadata = {
   title: {
@@ -51,18 +72,23 @@ export default function RootLayout({
   return (
     <html
       lang="zh-CN"
-      className="dark"
+      className={`dark ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
-      style={{
-        '--font-inter': 'system-ui, sans-serif',
-        '--font-space-grotesk': 'system-ui, sans-serif',
-        '--font-jetbrains-mono': 'ui-monospace, monospace',
-      } as React.CSSProperties}
     >
       <body className="font-body antialiased">
         <div className="min-h-screen">
           {children}
         </div>
+        <Toaster
+          position="top-center"
+          toastOptions={{
+            style: {
+              background: '#111111',
+              border: '1px solid #2a2a2a',
+              color: '#ffffff',
+            },
+          }}
+        />
       </body>
     </html>
   )

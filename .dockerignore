@@ -11,3 +11,5 @@ Dockerfile
 .dockerignore
 fly.toml
 README.md
+.fly
+docs

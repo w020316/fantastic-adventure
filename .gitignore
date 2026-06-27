@@ -40,6 +40,12 @@ env.txt
 # vercel
 .vercel
 
+# fly.io
+.fly/
+
+# windows appdata (shouldn't be in repo)
+AppData/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

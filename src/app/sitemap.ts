@@ -2,7 +2,7 @@ import { MetadataRoute } from 'next'
 import { prisma } from '@/lib/prisma'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://xiaowu.dev'
+  const baseUrl = process.env.NEXTAUTH_URL || 'https://fantastic-adventure.fly.dev'
 
   let articles: { slug: string; updatedAt: Date; publishedAt: Date | null }[] = []
   try {

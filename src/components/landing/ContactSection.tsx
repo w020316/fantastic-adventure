@@ -1,7 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { toast } from 'sonner'
 import SectionReveal from '@/components/ui/SectionReveal'
+import { contactSchema } from '@/lib/validations'
 
 interface FormState {
   name: string
@@ -23,8 +25,7 @@ const initialState: FormState = {
  */
 export default function ContactSection() {
   const [form, setForm] = useState<FormState>(initialState)
-  const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle')
-  const [errorMessage, setErrorMessage] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
     const { name, value } = e.target
@@ -35,27 +36,22 @@ export default function ContactSection() {
     e.preventDefault()
 
     // HoneyPot 命中：静默成功，不实际提交（前端拦截 + 后端二次校验）
+    // 必须在 schema 验证之前判断，避免暴露 honeypot 字段的存在
     if (form.website) {
-      setStatus('success')
+      toast.success('消息已发送')
+      setForm(initialState)
       return
     }
 
-    // 基础验证
-    if (!form.name.trim() || !form.email.trim() || !form.message.trim()) {
-      setStatus('error')
-      setErrorMessage('请填写所有必填字段')
+    // 使用 zod schema 验证
+    const parsed = contactSchema.safeParse(form)
+    if (!parsed.success) {
+      const firstError = parsed.error.issues[0]
+      toast.error(firstError?.message || '请填写所有必填字段')
       return
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(form.email)) {
-      setStatus('error')
-      setErrorMessage('请输入有效的邮箱地址')
-      return
-    }
-
-    setStatus('submitting')
-    setErrorMessage('')
+    setSubmitting(true)
 
     try {
       const res = await fetch('/api/contact', {
@@ -75,11 +71,12 @@ export default function ContactSection() {
         throw new Error(data.error || '提交失败')
       }
 
-      setStatus('success')
+      toast.success('消息已发送')
       setForm(initialState)
     } catch (err) {
-      setStatus('error')
-      setErrorMessage(err instanceof Error ? err.message : '提交失败，请稍后重试')
+      toast.error(err instanceof Error ? err.message : '提交失败，请稍后重试')
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -104,116 +101,91 @@ export default function ContactSection() {
                 我会在 24 小时内回复你。
               </p>
 
-              {/* 成功状态 */}
-              {status === 'success' ? (
-                <div className="bg-[#0a0a0a] rounded-2xl p-8 text-center">
-                  <div className="w-12 h-12 mx-auto mb-4 flex items-center justify-center bg-[#ccff00] rounded-full">
-                    <svg className="w-6 h-6 text-[#0a0a0a]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                    </svg>
-                  </div>
-                  <h3 className="font-display text-xl font-bold text-white mb-2">消息已发送</h3>
-                  <p className="text-[#888] text-sm mb-6">感谢你的留言，我会尽快回复你。</p>
-                  <button
-                    onClick={() => setStatus('idle')}
-                    className="btn-brand"
-                  >
-                    再发一条
-                  </button>
-                </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
-                  {/* HoneyPot 字段 */}
-                  <input
-                    type="text"
-                    name="website"
-                    value={form.website}
-                    onChange={handleChange}
-                    tabIndex={-1}
-                    autoComplete="off"
-                    className="absolute left-[-9999px] opacity-0"
-                    aria-hidden="true"
-                  />
+              <form onSubmit={handleSubmit} className="space-y-4 max-w-xl">
+                {/* HoneyPot 字段 */}
+                <input
+                  type="text"
+                  name="website"
+                  value={form.website}
+                  onChange={handleChange}
+                  tabIndex={-1}
+                  autoComplete="off"
+                  className="absolute left-[-9999px] opacity-0"
+                  aria-hidden="true"
+                />
 
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <label htmlFor="name" className="block text-xs font-mono text-[#0a0a0a]/70 mb-1.5">
-                        称呼 *
-                      </label>
-                      <input
-                        id="name"
-                        name="name"
-                        type="text"
-                        required
-                        value={form.name}
-                        onChange={handleChange}
-                        placeholder="你的名字"
-                        className="w-full px-4 py-3 bg-[#0a0a0a]/5 border border-[#0a0a0a]/10 rounded-xl text-[#0a0a0a] placeholder-[#0a0a0a]/40 focus:outline-none focus:border-[#0a0a0a] focus:bg-white transition-all text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label htmlFor="email" className="block text-xs font-mono text-[#0a0a0a]/70 mb-1.5">
-                        邮箱 *
-                      </label>
-                      <input
-                        id="email"
-                        name="email"
-                        type="email"
-                        required
-                        value={form.email}
-                        onChange={handleChange}
-                        placeholder="your@email.com"
-                        className="w-full px-4 py-3 bg-[#0a0a0a]/5 border border-[#0a0a0a]/10 rounded-xl text-[#0a0a0a] placeholder-[#0a0a0a]/40 focus:outline-none focus:border-[#0a0a0a] focus:bg-white transition-all text-sm"
-                      />
-                    </div>
-                  </div>
-
+                <div className="grid sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="message" className="block text-xs font-mono text-[#0a0a0a]/70 mb-1.5">
-                      需求描述 *
+                    <label htmlFor="name" className="block text-xs font-mono text-[#0a0a0a]/70 mb-1.5">
+                      称呼 *
                     </label>
-                    <textarea
-                      id="message"
-                      name="message"
+                    <input
+                      id="name"
+                      name="name"
+                      type="text"
                       required
-                      rows={5}
-                      value={form.message}
+                      value={form.name}
                       onChange={handleChange}
-                      placeholder="简单描述你的需求或想法..."
-                      className="w-full px-4 py-3 bg-[#0a0a0a]/5 border border-[#0a0a0a]/10 rounded-xl text-[#0a0a0a] placeholder-[#0a0a0a]/40 focus:outline-none focus:border-[#0a0a0a] focus:bg-white transition-all text-sm resize-none"
+                      placeholder="你的名字"
+                      className="w-full px-4 py-3 bg-[#0a0a0a]/5 border border-[#0a0a0a]/10 rounded-xl text-[#0a0a0a] placeholder-[#0a0a0a]/40 focus:outline-none focus:border-[#0a0a0a] focus:bg-white transition-all text-sm"
                     />
                   </div>
+                  <div>
+                    <label htmlFor="email" className="block text-xs font-mono text-[#0a0a0a]/70 mb-1.5">
+                      邮箱 *
+                    </label>
+                    <input
+                      id="email"
+                      name="email"
+                      type="email"
+                      required
+                      value={form.email}
+                      onChange={handleChange}
+                      placeholder="your@email.com"
+                      className="w-full px-4 py-3 bg-[#0a0a0a]/5 border border-[#0a0a0a]/10 rounded-xl text-[#0a0a0a] placeholder-[#0a0a0a]/40 focus:outline-none focus:border-[#0a0a0a] focus:bg-white transition-all text-sm"
+                    />
+                  </div>
+                </div>
 
-                  {status === 'error' && (
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3 text-sm text-red-600">
-                      {errorMessage}
-                    </div>
+                <div>
+                  <label htmlFor="message" className="block text-xs font-mono text-[#0a0a0a]/70 mb-1.5">
+                    需求描述 *
+                  </label>
+                  <textarea
+                    id="message"
+                    name="message"
+                    required
+                    rows={5}
+                    value={form.message}
+                    onChange={handleChange}
+                    placeholder="简单描述你的需求或想法..."
+                    className="w-full px-4 py-3 bg-[#0a0a0a]/5 border border-[#0a0a0a]/10 rounded-xl text-[#0a0a0a] placeholder-[#0a0a0a]/40 focus:outline-none focus:border-[#0a0a0a] focus:bg-white transition-all text-sm resize-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#0a0a0a] text-white text-sm font-semibold rounded-full hover:bg-[#222] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                >
+                  {submitting ? (
+                    <>
+                      <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                      </svg>
+                      发送中...
+                    </>
+                  ) : (
+                    <>
+                      发送消息
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                      </svg>
+                    </>
                   )}
-
-                  <button
-                    type="submit"
-                    disabled={status === 'submitting'}
-                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-[#0a0a0a] text-white text-sm font-semibold rounded-full hover:bg-[#222] disabled:opacity-50 disabled:cursor-not-allowed transition-all"
-                  >
-                    {status === 'submitting' ? (
-                      <>
-                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                        </svg>
-                        发送中...
-                      </>
-                    ) : (
-                      <>
-                        发送消息
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                        </svg>
-                      </>
-                    )}
-                  </button>
-                </form>
-              )}
+                </button>
+              </form>
 
               {/* 其他联系方式 */}
               <div className="mt-10 pt-8 border-t border-[#0a0a0a]/10 flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">

@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import { toast } from 'sonner'
 import { fetchArticles, fetchArticle, likeArticle, submitComment } from '@/lib/api'
 import { useBookmarks } from '@/hooks/useBookmarks'
 import { useReadingHistory } from '@/hooks/useReadingHistory'
@@ -93,7 +94,6 @@ function LikeButton({ initialLikes, articleId }: { initialLikes: number; article
 function BookmarkButton({ articleId, title, slug, excerpt }: { articleId: string; title: string; slug: string; excerpt: string }) {
   const { addBookmark, removeBookmark, isBookmarked } = useBookmarks()
   const [bookmarked, setBookmarked] = useState(false)
-  const [toast, setToast] = useState('')
 
   useEffect(() => {
     setBookmarked(isBookmarked(articleId))
@@ -103,13 +103,12 @@ function BookmarkButton({ articleId, title, slug, excerpt }: { articleId: string
     if (bookmarked) {
       removeBookmark(articleId)
       setBookmarked(false)
-      setToast('已移除书签')
+      toast.success('已移除书签')
     } else {
       addBookmark({ id: articleId, title, slug, excerpt })
       setBookmarked(true)
-      setToast('已添加书签')
+      toast.success('已添加书签')
     }
-    setTimeout(() => setToast(''), 2000)
   }
 
   return (
@@ -126,11 +125,6 @@ function BookmarkButton({ articleId, title, slug, excerpt }: { articleId: string
         <span className="text-base">{bookmarked ? '★' : '☆'}</span>
         {bookmarked ? '已收藏' : '收藏'}
       </button>
-      {toast && (
-        <div className="absolute -top-10 left-1/2 -translate-x-1/2 whitespace-nowrap px-3 py-1.5 rounded-sm bg-cyber-surface border border-cyber-neon/30 text-cyber-neon font-mono text-xs animate-fade-in-up pointer-events-none">
-          {toast}
-        </div>
-      )}
     </div>
   )
 }
@@ -197,7 +191,6 @@ function CommentSection({ articleId, initialComments }: { articleId: string; ini
   const [content, setContent] = useState('')
   const [email, setEmail] = useState('')
   const [submitting, setSubmitting] = useState(false)
-  const [submitted, setSubmitted] = useState(false)
   const [replyingTo, setReplyingTo] = useState<string | null>(null)
   const [replyNickname, setReplyNickname] = useState('')
   const [replyContent, setReplyContent] = useState('')
@@ -235,9 +228,9 @@ function CommentSection({ articleId, initialComments }: { articleId: string; ini
       setNickname('')
       setContent('')
       setEmail('')
-      setSubmitted(true)
-      setTimeout(() => setSubmitted(false), 3000)
+      toast.success('评论已提交，等待审核')
     } catch {
+      toast.error('评论提交失败，请重试')
     } finally {
       setSubmitting(false)
     }
@@ -270,9 +263,9 @@ function CommentSection({ articleId, initialComments }: { articleId: string; ini
       setReplyContent('')
       setReplyEmail('')
       setReplyingTo(null)
-      setSubmitted(true)
-      setTimeout(() => setSubmitted(false), 3000)
+      toast.success('回复已提交，等待审核')
     } catch {
+      toast.error('回复提交失败，请重试')
     } finally {
       setReplySubmitting(false)
     }
@@ -326,9 +319,6 @@ function CommentSection({ articleId, initialComments }: { articleId: string; ini
             />
           </div>
           <div className="flex items-center justify-between">
-            {submitted && (
-              <span className="font-mono text-xs text-cyber-neon" role="status">✓ 评论已提交，等待审核</span>
-            )}
             <button
               type="submit"
               disabled={submitting}
@@ -402,9 +392,6 @@ function CommentSection({ articleId, initialComments }: { articleId: string; ini
                       required
                     />
                     <div className="flex items-center justify-end gap-2">
-                      {submitted && (
-                        <span className="font-mono text-xs text-cyber-neon" role="status">✓ 回复已提交，等待审核</span>
-                      )}
                       <button
                         type="submit"
                         disabled={replySubmitting}

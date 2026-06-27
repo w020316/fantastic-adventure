@@ -30,6 +30,14 @@ export const commentSchema = z.object({
   parentId: z.string().optional(),
 })
 
+export const contactSchema = z.object({
+  name: z.string().min(1).max(100),
+  email: z.string().email().max(200),
+  message: z.string().min(1).max(5000),
+  // honeypot：正常用户留空，机器人可能填写
+  website: z.string().max(0).optional().or(z.literal('')),
+})
+
 export const projectSchema = z.object({
   title: z.string().min(1).max(100),
   description: z.string().min(1),
