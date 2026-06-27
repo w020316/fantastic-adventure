@@ -55,17 +55,17 @@ RUN if [ ! -f "./server.js" ]; then \
     fi && \
     chown -R nextjs:nodejs /app
 
-# 复制 prisma 相关文件用于运行时迁移
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+# 只复制 Prisma Client 运行时文件（不含 prisma CLI）
+# prisma CLI 依赖 @prisma/config -> effect 模块，standalone 镜像中没有这些
+# 数据库 schema 初始化在本地直连 Neon 执行（npx prisma db push）
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/client ./node_modules/@prisma/client
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
 
 EXPOSE 3000
 
-# 启动前尝试执行 prisma db push，即使失败也启动服务器
-# 使用 || true 确保 db push 失败不会阻止服务器启动
-# 使用 node_modules 内 prisma 入口避免 npx 找不到命令
-CMD ["sh", "-c", "node ./node_modules/prisma/build/index.js db push --skip-generate --accept-data-loss 2>&1 || echo 'WARNING: prisma db push failed, starting server anyway'; node server.js"]
+# 直接启动 Next.js 服务器
+# 数据库 schema 初始化请在部署后于本地执行：npx prisma db push（直连 Neon）
+CMD ["node", "server.js"]
