@@ -13,7 +13,41 @@ export default function HeroSection() {
 
   useEffect(() => {
     const isTouchDevice = window.matchMedia('(hover: none)').matches
-    if (isTouchDevice) return
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+    // 触屏设备：自动循环揭示动画（中文名 ↔ 英文名）
+    if (isTouchDevice && !prefersReducedMotion) {
+      // 循环周期 4s：中文 2.5s → 渐变 0.5s → 英文 1s → 渐变回 0.5s
+      const cycle = 4000
+      const fadeIn = 500
+      const showEn = 1000
+      const fadeOut = 500
+      const showCn = 2000
+
+      const startTime = Date.now()
+      const timer = setInterval(() => {
+        const elapsed = (Date.now() - startTime) % cycle
+        let progress = 0
+        if (elapsed < showCn) {
+          // 显示中文
+          progress = 0
+        } else if (elapsed < showCn + fadeIn) {
+          // 中文 → 英文渐变
+          progress = (elapsed - showCn) / fadeIn
+        } else if (elapsed < showCn + fadeIn + showEn) {
+          // 显示英文
+          progress = 1
+        } else {
+          // 英文 → 中文渐变
+          progress = 1 - (elapsed - showCn - fadeIn - showEn) / fadeOut
+        }
+        setRevealProgress(Math.max(0, Math.min(1, progress)))
+      }, 16)
+      return () => clearInterval(timer)
+    }
+
+    // 桌面端：鼠标驱动揭示
+    if (isTouchDevice || prefersReducedMotion) return
 
     const nameEl = nameRef.current
     if (!nameEl) return
