@@ -1,7 +1,7 @@
 # Fly.io 配置文件
 # 部署时 flyctl 会自动读取此文件
 
-app = "xiaowu-portfolio"
+app = "fantastic-adventure"
 primary_region = "hkg"  # 香港节点，国内访问最快
 
 [build]
