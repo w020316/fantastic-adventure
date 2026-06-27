@@ -15,6 +15,10 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
+# 构建时使用占位 DATABASE_URL，让 Prisma Client 能初始化
+# 真实 DATABASE_URL 由 Fly.io Secrets 在运行时注入
+# 使用 force-dynamic 的页面不会在构建时查询数据库
+ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder?schema=public"
 RUN npx prisma generate
 RUN npm run build
 
