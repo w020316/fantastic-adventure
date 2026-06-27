@@ -1,6 +1,9 @@
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 
+// 运行时动态渲染，避免构建时需要 DATABASE_URL
+export const dynamic = 'force-dynamic'
+
 type ProjectMetric = {
   label?: string
   value?: string | number
