@@ -156,18 +156,18 @@ async function main() {
   const projectsData = [
     {
       title: '个人数字品牌作品集',
-      subtitle: '本站 · Next.js 15 全栈作品集系统',
-      description: '基于 Next.js 15 App Router 的个人作品集系统，含 CMS 后台、博客、项目管理、联系表单。支持鼠标光斑、3D 倾斜卡片等高级交互，深色极简设计。',
+      subtitle: '本站 · Next.js 16 全栈作品集系统',
+      description: '基于 Next.js 16 App Router 的个人作品集系统，含 CMS 后台、博客、项目管理、联系表单。支持鼠标光斑、3D 倾斜卡片等高级交互，深色极简设计。',
       impact: '将个人项目沉淀为可复用的作品集系统，同时展示设计审美与工程能力',
       metrics: [
         { label: '技术栈', value: 0, display: 'Next.js' },
         { label: '页面数', value: 34, suffix: '+' },
         { label: 'Lighthouse', value: 90, suffix: '+' },
       ],
-      demoUrl: null,
-      repoUrl: 'https://github.com/w020316',
+      demoUrl: 'https://fantastic-adventure.fly.dev',
+      repoUrl: 'https://github.com/w020316/fantastic-adventure',
       caseStudyUrl: null,
-      techStack: ['Next.js 15', 'React 19', 'TypeScript', 'Prisma', 'Tailwind CSS'],
+      techStack: ['Next.js 16', 'React 19', 'TypeScript', 'Prisma', 'Tailwind CSS 4'],
       featured: true,
       order: 0,
     },

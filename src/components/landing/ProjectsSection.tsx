@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import SectionReveal from '@/components/ui/SectionReveal'
 import CountUp from '@/components/ui/CountUp'
+import { SITE_CONFIG } from '@/lib/site-config'
 
 interface ProjectMetric {
   label: string
@@ -98,6 +99,9 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
   if (projects && projects.length > 0) {
     displayProjects = projects.map((p) => {
       const metrics = (p.metrics as ProjectMetric[] | null) ?? []
+      // 兜底：本站项目（标题/副标题含"个人"/"作品集"/"博客"/"本站"）若链接缺失或指向用户主页则补全
+      const isSiteProject = /个人|作品集|博客|本站/.test(p.title + (p.subtitle ?? ''))
+      const repoIsUserHome = p.repoUrl === SITE_CONFIG.github || !p.repoUrl
       return {
         id: p.id,
         title: p.title,
@@ -105,8 +109,10 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
         description: p.description,
         metrics: metrics.length > 0 ? metrics : [{ label: '状态', value: 0, display: 'Live' }],
         techStack: p.techStack,
-        demoUrl: p.demoUrl ?? undefined,
-        repoUrl: p.repoUrl ?? undefined,
+        demoUrl: p.demoUrl ?? (isSiteProject ? SITE_CONFIG.siteUrl : undefined),
+        repoUrl: isSiteProject && repoIsUserHome
+          ? `https://github.com/${SITE_CONFIG.githubUsername}/fantastic-adventure`
+          : (p.repoUrl ?? undefined),
         featured: p.featured,
       }
     })

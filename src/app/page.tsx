@@ -8,6 +8,7 @@ import ArticlesSection from '@/components/landing/ArticlesSection'
 import ContactSection from '@/components/landing/ContactSection'
 import SpotlightCursor from '@/components/landing/SpotlightCursor'
 import GitHubReposSection from '@/components/landing/GitHubReposSection'
+import GallerySection from '@/components/landing/GallerySection'
 import { prisma } from '@/lib/prisma'
 
 // 动态渲染，确保每次请求都获取最新数据
@@ -97,6 +98,7 @@ export default async function HomePage() {
         <ProjectsSection projects={dbProjects} />
         <GitHubReposSection />
         <ArticlesSection articles={dbArticles} />
+        <GallerySection />
         <ContactSection />
       </main>
       <Footer />

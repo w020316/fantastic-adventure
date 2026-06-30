@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
+import UpdateNoticeModal from '@/components/landing/UpdateNoticeModal'
 import './globals.css'
 
 // 字体加载
@@ -79,6 +80,7 @@ export default function RootLayout({
         <div className="min-h-screen">
           {children}
         </div>
+        <UpdateNoticeModal />
         <Toaster
           position="top-center"
           toastOptions={{

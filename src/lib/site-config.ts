@@ -7,7 +7,32 @@ export const SITE_CONFIG = {
   brandName: 'XIAO/WU',
   authorNameCn: '周末',
   authorNameEn: 'Cris',
+  // 版本号：每次发版递增，用户首次访问新版本时弹窗提示更新内容
+  version: '1.2.0',
 }
+
+// 版本更新日志（最新版本放最前）
+export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: '1.2.0',
+    date: '2026-06-28',
+    items: [
+      '新增照片展示区域，以赛博朋克风格呈现项目与生活瞬间',
+      '新增版本更新提示弹窗，首次访问新版本自动展示更新内容',
+      '修复个人博客项目跳转链接，在线体验入口现已指向实际部署地址',
+      '评论与点赞功能优化，支持嵌套回复与防重复点赞',
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: '2026-06-20',
+    items: [
+      'GitHub 开源区块上线，实时同步仓库与在线体验入口',
+      'Fly.io 自动化部署，GitHub Actions CI/CD 流水线',
+      '赛博朋克设计系统全面升级，霓虹荧光绿主题',
+    ],
+  },
+]
 
 // 获取配置（优先从环境变量读取，fallback 到硬编码）
 export function getSiteConfig() {
