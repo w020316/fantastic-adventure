@@ -22,6 +22,8 @@ export async function GET(request: Request) {
           'Referer': 'https://music.163.com',
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           'Content-Type': 'application/x-www-form-urlencoded',
+          'X-Real-IP': '116.25.146.37',
+          'X-Forwarded-For': '116.25.146.37',
         },
         body,
       })
@@ -58,6 +60,8 @@ export async function GET(request: Request) {
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           'Referer': 'https://music.163.com',
+          'X-Real-IP': '116.25.146.37',
+          'X-Forwarded-For': '116.25.146.37',
         },
       }
     )

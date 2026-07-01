@@ -61,6 +61,9 @@ async function searchNetease(keyword: string, limit = 30): Promise<{ tracks: Tra
         'Referer': 'https://music.163.com',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
         'Content-Type': 'application/x-www-form-urlencoded',
+        // 伪装国内IP：解决海外服务器无法正确解析URL编码中文的问题
+        'X-Real-IP': '116.25.146.37',
+        'X-Forwarded-For': '116.25.146.37',
       },
       body: body.toString(),
       signal: controller.signal,

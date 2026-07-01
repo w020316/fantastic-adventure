@@ -8,11 +8,25 @@ export const SITE_CONFIG = {
   authorNameCn: '周末',
   authorNameEn: 'Cris',
   // 版本号：每次发版递增，用户首次访问新版本时弹窗提示更新内容
-  version: '1.3.0',
+  version: '1.4.0',
 }
 
 // 版本更新日志（最新版本放最前）
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: '1.4.0',
+    date: '2026-07-01',
+    items: [
+      '音乐播放器升级：新增搜索功能，支持按歌曲名/歌手搜索，国内外音乐分类展示',
+      '音乐库扩充：新增华语流行/古风/摇滚等国内热门曲目（周杰伦/邓紫棋/陈奕迅等）',
+      '音乐播放器新增地区筛选（国内/国际/全部）与循环模式切换',
+      'AI 助手新增文件上传功能：支持代码/文本/Markdown等20+格式，最多5个文件',
+      'AI 助手响应速度优化：max_tokens 调优 + prompt 精简 + 限流策略优化',
+      'AI 助手新增图像生成模式：基于 Agnes AI agnes-image-2.1-flash 文生图',
+      'AI 助手新增视频生成模式：基于 Agnes AI agnes-video-v2.0 异步文生视频',
+      'AI 助手三种模式可切换：对话 💬 / 图像 🎨 / 视频 🎬',
+    ],
+  },
   {
     version: '1.3.0',
     date: '2026-06-28',

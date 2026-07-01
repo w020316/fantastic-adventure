@@ -17,3 +17,28 @@ docs
 *.zip
 *.tar
 *.gz
+# 排除本地脚本和临时目录（避免Windows权限问题导致Docker构建失败）
+*.py
+*.yml
+fly-config.yml
+resume_images
+resume_output
+resume_pages
+resume_verify
+verify_resume.py
+check_pdf.py
+extract_images.py
+extract_pdf.py
+gen_resume.py
+gen_resume_v2.py
+ocr_deep.py
+ocr_enhance.py
+ocr_page.py
+ocr_resume.py
+render_full_page.py
+render_page.py
+# 排除Windows系统缓存目录（IE/Edge缓存有System属性，会导致tar打包失败）
+AppData
+$RECYCLE.BIN
+Thumbs.db
+desktop.ini

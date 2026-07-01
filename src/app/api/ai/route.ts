@@ -2,22 +2,22 @@ import { NextRequest } from 'next/server'
 
 // 本地开发环境通过代理访问 Agnes AI（生产环境 Fly.io 直连，无需代理）
 // 动态导入 undici ProxyAgent，避免生产环境 import 失败
+// 使用 Function 包裹避免 TypeScript 静态检查 undici 类型声明
 async function getDispatcher(): Promise<any> {
   const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY
   if (!proxyUrl) return undefined
   try {
-    const undici = await import('undici')
+    // eslint-disable-next-line @typescript-eslint/no-implied-eval
+    const dynamicImport = new Function('m', 'return import(m)') as (m: string) => Promise<any>
+    const undici = await dynamicImport('undici')
     return new undici.ProxyAgent(proxyUrl)
   } catch {
     return undefined
   }
 }
 
-const SYSTEM_PROMPT = `你是 CyberBlog 的 AI 助手，一个赛博朋克风格博客的智能助手。
-你的性格：冷静、精准、略带赛博朋克风格，偶尔使用技术隐喻。
-回答风格：简洁有力，善用代码示例，适当使用 → ◆ ▸ 等符号。
-语言：中文为主，技术术语保留英文。
-限制：只回答与技术、博客内容相关的问题，不回答政治、暴力等敏感话题。`
+// 精简 system prompt，降低输入 token 数量以加快首字响应
+const SYSTEM_PROMPT = `你是CyberBlog的AI助手。回答简洁，中文为主，技术术语保留英文。只回答技术相关问题。`
 
 function getClientIP(request: NextRequest): string {
   return request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
@@ -40,11 +40,11 @@ function checkRateLimit(ip: string): boolean {
       globalMap.set(ip, { count: 1, resetAt: now + 60000 })
     } else {
       entry.count++
-      if (entry.count > 5) return false
+      if (entry.count > 10) return false
     }
   }
 
-  // 每日上限（50次/天/IP）
+  // 每日上限（100次/天/IP）
   const dailyMap = (globalThis as Record<string, unknown>).__aiDailyLimit as Map<string, { count: number; date: string }> | undefined
   const today = new Date().toISOString().split('T')[0]
   if (!dailyMap) {
@@ -57,10 +57,23 @@ function checkRateLimit(ip: string): boolean {
       dailyMap.set(ip, { count: 1, date: today })
     } else {
       entry.count++
-      if (entry.count > 50) return false
+      if (entry.count > 100) return false
     }
   }
   return true
+}
+
+// 文件内容提取：将上传的文本类文件转为可处理的字符串
+// 支持纯文本、代码、markdown、json 等文本格式
+function extractFileContent(fileName: string, fileContent: string): string {
+  const ext = fileName.split('.').pop()?.toLowerCase() || ''
+  const textExts = ['txt', 'md', 'json', 'js', 'ts', 'tsx', 'jsx', 'py', 'java', 'go', 'rs', 'c', 'cpp', 'h', 'css', 'scss', 'html', 'xml', 'yml', 'yaml', 'sh', 'sql', 'vue', 'php', 'rb', 'swift', 'kt']
+  if (!textExts.includes(ext)) {
+    return `[文件 ${fileName} 为非文本格式，已跳过内容提取]`
+  }
+  // 截断超长文件，避免超出 token 限制
+  const truncated = fileContent.length > 4000 ? fileContent.slice(0, 4000) + '\n...[文件已截断]' : fileContent
+  return `[用户上传文件: ${fileName}]\n\`\`\`\n${truncated}\n\`\`\``
 }
 
 export async function POST(request: NextRequest) {
@@ -81,42 +94,92 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const body = await request.json()
-    const { message, context, history } = body as {
-      message: string
-      context?: string
-      history?: { role: 'user' | 'assistant'; content: string }[]
+    // 同时支持 application/json 和 multipart/form-data
+    let message = ''
+    let context: string | undefined
+    let history: { role: 'user' | 'assistant'; content: string }[] | undefined
+    let files: { name: string; content: string }[] = []
+
+    const contentType = request.headers.get('content-type') || ''
+
+    if (contentType.includes('multipart/form-data')) {
+      // 文件上传场景
+      const formData = await request.formData()
+      message = (formData.get('message') as string)?.trim() || ''
+      context = (formData.get('context') as string) || undefined
+      const historyStr = formData.get('history') as string
+      if (historyStr) {
+        try { history = JSON.parse(historyStr) } catch {}
+      }
+      // 提取所有上传文件
+      const entries = Array.from(formData.entries())
+      for (const [key, value] of entries) {
+        if (key.startsWith('file-') && value instanceof File) {
+          // 限制单文件 1MB
+          if (value.size > 1024 * 1024) {
+            return new Response(JSON.stringify({ error: `文件 ${value.name} 超过 1MB 限制` }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            })
+          }
+          // 限制总文件数 5 个
+          if (files.length >= 5) {
+            return new Response(JSON.stringify({ error: '最多同时上传 5 个文件' }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            })
+          }
+          const textContent = await value.text()
+          files.push({ name: value.name, content: extractFileContent(value.name, textContent) })
+        }
+      }
+    } else {
+      const body = await request.json()
+      message = (body.message || '').trim()
+      context = body.context
+      history = body.history
     }
 
-    if (!message?.trim()) {
-      return new Response(JSON.stringify({ error: '请输入消息' }), {
+    if (!message && files.length === 0) {
+      return new Response(JSON.stringify({ error: '请输入消息或上传文件' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       })
     }
 
     if (message.length > 2000) {
-      return new Response(JSON.stringify({ error: '消息过长' }), {
+      return new Response(JSON.stringify({ error: '消息过长（上限 2000 字符）' }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' },
       })
     }
 
+    // 组装消息体：system + 文件内容 + 历史 + 用户消息
     const systemContent = context
       ? `${SYSTEM_PROMPT}\n\n当前上下文：${context}`
       : SYSTEM_PROMPT
 
+    // 将文件内容作为额外 user 消息插入，让 AI 能感知文件
+    const fileMessage = files.length > 0
+      ? files.map((f) => f.content).join('\n\n')
+      : ''
+
+    const userContent = fileMessage
+      ? `${fileMessage}\n\n用户问题：${message || '请分析以上文件内容'}`
+      : message
+
     const messages = [
       { role: 'system' as const, content: systemContent },
-      ...(history || []).map((m: { role: 'user' | 'assistant'; content: string }) => ({
+      ...(history || []).slice(-4).map((m: { role: 'user' | 'assistant'; content: string }) => ({
         role: m.role as 'user' | 'assistant',
         content: m.content,
       })),
-      { role: 'user' as const, content: message.trim() },
+      { role: 'user' as const, content: userContent },
     ]
 
     const dispatcher = await getDispatcher()
-    const response = await fetch('https://api.agnes-ai.com/v1/chat/completions', {
+    // Agnes AI 官方 endpoint：apihub.agnes-ai.com/v1（OpenAI 兼容）
+    const response = await fetch('https://apihub.agnes-ai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -125,8 +188,11 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         model: 'agnes-2.0-flash',
         messages,
-        max_tokens: 800,
+        // 降低 max_tokens 加快响应速度（中文场景 400 足够覆盖大多数问答）
+        max_tokens: 400,
         stream: true,
+        // 略降 temperature 加快推理确定性
+        temperature: 0.6,
       }),
       // undici 代理支持（本地开发走代理，生产环境 undefined 直连）
       ...(dispatcher ? { dispatcher: dispatcher as any } : {}),
@@ -135,7 +201,7 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       const errorText = await response.text()
       console.error('Agnes AI API error:', response.status, errorText)
-      return new Response(JSON.stringify({ error: 'AI 服务暂时不可用' }), {
+      return new Response(JSON.stringify({ error: 'AI 服务暂时不可用，请稍后再试' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },
       })
@@ -200,7 +266,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (error) {
     console.error('AI route error:', error instanceof Error ? `${error.name}: ${error.message}` : String(error))
-    return new Response(JSON.stringify({ error: 'AI 服务异常', detail: error instanceof Error ? error.message : 'unknown' }), {
+    return new Response(JSON.stringify({ error: 'AI 服务异常，请稍后再试' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     })
