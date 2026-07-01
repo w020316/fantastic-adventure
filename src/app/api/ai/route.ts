@@ -1,5 +1,18 @@
 import { NextRequest } from 'next/server'
 
+// 本地开发环境通过代理访问 Agnes AI（生产环境 Fly.io 直连，无需代理）
+// 动态导入 undici ProxyAgent，避免生产环境 import 失败
+async function getDispatcher(): Promise<any> {
+  const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY
+  if (!proxyUrl) return undefined
+  try {
+    const undici = await import('undici')
+    return new undici.ProxyAgent(proxyUrl)
+  } catch {
+    return undefined
+  }
+}
+
 const SYSTEM_PROMPT = `你是 CyberBlog 的 AI 助手，一个赛博朋克风格博客的智能助手。
 你的性格：冷静、精准、略带赛博朋克风格，偶尔使用技术隐喻。
 回答风格：简洁有力，善用代码示例，适当使用 → ◆ ▸ 等符号。
@@ -102,6 +115,7 @@ export async function POST(request: NextRequest) {
       { role: 'user' as const, content: message.trim() },
     ]
 
+    const dispatcher = await getDispatcher()
     const response = await fetch('https://api.agnes-ai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -114,6 +128,8 @@ export async function POST(request: NextRequest) {
         max_tokens: 800,
         stream: true,
       }),
+      // undici 代理支持（本地开发走代理，生产环境 undefined 直连）
+      ...(dispatcher ? { dispatcher: dispatcher as any } : {}),
     })
 
     if (!response.ok) {
@@ -183,8 +199,8 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('AI route error:', error)
-    return new Response(JSON.stringify({ error: 'AI 服务异常' }), {
+    console.error('AI route error:', error instanceof Error ? `${error.name}: ${error.message}` : String(error))
+    return new Response(JSON.stringify({ error: 'AI 服务异常', detail: error instanceof Error ? error.message : 'unknown' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' },
     })
