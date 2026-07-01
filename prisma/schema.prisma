@@ -218,3 +218,43 @@ model SiteConfig {
 
   @@map("site_configs")
 }
+
+/// 音乐曲目库 - 支持后台管理
+model MusicTrack {
+  id        String   @id @default(cuid())
+  title     String
+  artist    String
+  category  String   @default("pop") // pop/electronic/ambient/beats/guofeng/rock/online
+  region    String   @default("cn") // cn | intl
+  duration  Int      @default(0) // 秒
+  url       String   // 播放URL
+  cover     String   @default("#00ff9f") // 封面：色值或图片URL
+  album     String?  // 专辑名
+  mood      String?  // 关联心情key，逗号分隔，如 "happy,energetic"
+  isHot     Boolean  @default(false) // 是否热门（自动播放优先选择）
+  order     Int      @default(0) // 排序
+  source    String   @default("local") // local | online
+  playable  Boolean  @default(true) // 是否可播放
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isHot])
+  @@index([category])
+  @@index([region])
+  @@map("music_tracks")
+}
+
+/// 心情配置 - 后台可管理
+model Mood {
+  id          String   @id @default(cuid())
+  key         String   @unique // happy/relaxed/sad/energetic/focused/passionate
+  name        String   // 显示名
+  icon        String   @default("♪") // 图标emoji
+  color       String   @default("#00ff9f") // 主题色
+  description String?  // 描述
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("moods")
+}

@@ -8,15 +8,35 @@ interface Track {
   title: string
   artist: string
   category: string
+  region: 'cn' | 'intl'
   duration: number
   url: string
   cover: string
+  source?: 'local' | 'online' // 来源标识
+  onlineId?: string // 在线歌曲ID
+  album?: string // 专辑名
+  playable?: boolean // 是否可播放（在线曲目可能因版权受限）
+  mood?: string // 关联心情key，逗号分隔
+  isHot?: boolean // 是否热门
 }
 
 interface Category {
   id: string
   name: string
   desc: string
+}
+
+interface Region {
+  id: string
+  name: string
+}
+
+interface Mood {
+  key: string
+  name: string
+  icon: string
+  color: string
+  description?: string
 }
 
 interface MusicState {
@@ -33,6 +53,8 @@ interface MusicState {
 interface MusicContextValue extends MusicState {
   tracks: Track[]
   categories: Category[]
+  regions: Region[]
+  moods: Mood[]
   play: (track?: Track) => void
   pause: () => void
   toggle: () => void
@@ -46,6 +68,25 @@ interface MusicContextValue extends MusicState {
   setPanelOpen: (o: boolean) => void
   libraryOpen: boolean
   setLibraryOpen: (o: boolean) => void
+  // 搜索与筛选
+  searchQuery: string
+  setSearchQuery: (q: string) => void
+  activeCategory: string
+  setActiveCategory: (c: string) => void
+  activeRegion: string
+  setActiveRegion: (r: string) => void
+  activeMood: string
+  setActiveMood: (m: string) => void
+  filteredTracks: Track[]
+  // 搜索状态反馈
+  searching: boolean
+  resultHint: string | null
+  onlineStatus: 'idle' | 'success' | 'failed'
+  localCount: number
+  onlineCount: number
+  playError: string | null
+  // 自动播放提示
+  autoplayPrompt: string | null
 }
 
 const MusicContext = createContext<MusicContextValue | null>(null)
@@ -73,6 +114,8 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const [tracks, setTracks] = useState<Track[]>([])
   const [categories, setCategories] = useState<Category[]>([])
+  const [regions, setRegions] = useState<Region[]>([])
+  const [moods, setMoods] = useState<Mood[]>([])
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null)
   const [currentIndex, setCurrentIndex] = useState(-1)
   const [isPlaying, setIsPlaying] = useState(false)
@@ -84,17 +127,52 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const [repeat, setRepeat] = useState<'off' | 'all' | 'one'>('off')
   const [panelOpen, setPanelOpen] = useState(false)
   const [libraryOpen, setLibraryOpen] = useState(false)
+  // 搜索与筛选状态
+  const [searchQuery, setSearchQuery] = useState('')
+  const [activeCategory, setActiveCategory] = useState('all')
+  const [activeRegion, setActiveRegion] = useState('all')
+  const [activeMood, setActiveMood] = useState('all')
+  // 搜索状态（在线搜索反馈）
+  const [searching, setSearching] = useState(false)
+  const [resultHint, setResultHint] = useState<string | null>(null)
+  const [onlineStatus, setOnlineStatus] = useState<'idle' | 'success' | 'failed'>('idle')
+  const [localCount, setLocalCount] = useState(0)
+  const [onlineCount, setOnlineCount] = useState(0)
+  // 自动播放提示（浏览器策略要求首次用户交互后才能播放）
+  const [autoplayPrompt, setAutoplayPrompt] = useState<string | null>(null)
+  const autoStartedRef = useRef(false) // 防止重复触发自动播放
 
-  // 初始化：加载音乐库 + 读取本地存储
+  // 加载音乐库（根据搜索关键词、分类、地区、心情调用API）
+  const loadMusic = useCallback(async (q: string, cat: string, reg: string, mood: string) => {
+    setSearching(true)
+    setResultHint(null)
+    try {
+      const params = new URLSearchParams()
+      if (q) params.append('q', q)
+      if (cat !== 'all') params.append('category', cat)
+      if (reg !== 'all') params.append('region', reg)
+      if (mood !== 'all') params.append('mood', mood)
+      const resp = await fetch(`/api/music?${params.toString()}`)
+      const data = await resp.json()
+      setTracks(data.tracks || [])
+      setCategories(data.categories || [])
+      setRegions(data.regions || [])
+      setMoods(data.moods || [])
+      setLocalCount(data.localCount ?? data.tracks?.length ?? 0)
+      setOnlineCount(data.onlineCount ?? 0)
+      setOnlineStatus(data.onlineStatus ?? 'idle')
+      setResultHint(data.resultHint ?? null)
+    } catch {
+      setResultHint('加载失败，请检查网络后重试')
+      setOnlineStatus('failed')
+    } finally {
+      setSearching(false)
+    }
+  }, [])
+
+  // 初始化 + 读取本地存储
   useEffect(() => {
-    fetch('/api/music')
-      .then((r) => r.json())
-      .then((data) => {
-        setTracks(data.tracks || [])
-        setCategories(data.categories || [])
-      })
-      .catch(() => {})
-
+    loadMusic('', 'all', 'all', 'all')
     try {
       const fav = localStorage.getItem(LS_FAV)
       if (fav) setFavorites(JSON.parse(fav))
@@ -103,7 +181,61 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
       const hist = localStorage.getItem(LS_HIST)
       if (hist) setHistory(JSON.parse(hist))
     } catch {}
-  }, [])
+  }, [loadMusic])
+
+  // 自动播放：监听首次用户交互（pointerdown/keydown），符合浏览器自动播放策略
+  // 进入页面后自动播放热门音乐（需用户首次交互解锁音频）
+  useEffect(() => {
+    if (autoStartedRef.current) return
+    function startAutoplay() {
+      if (autoStartedRef.current) return
+      autoStartedRef.current = true
+      // 清除提示
+      setAutoplayPrompt(null)
+      // 没有当前曲目时，自动播放热门第一首
+      if (!currentTrack && tracks.length > 0) {
+        const hotTracks = tracks.filter((t) => t.isHot)
+        const first = hotTracks[0] || tracks[0]
+        if (first) {
+          play(first)
+        }
+      }
+      // 移除监听
+      window.removeEventListener('pointerdown', startAutoplay)
+      window.removeEventListener('keydown', startAutoplay)
+      window.removeEventListener('touchstart', startAutoplay)
+    }
+    // 等待 tracks 加载完成后显示提示
+    if (tracks.length > 0 && !currentTrack && !isPlaying) {
+      setAutoplayPrompt('点击任意位置开启背景音乐 ♪')
+      window.addEventListener('pointerdown', startAutoplay, { once: true })
+      window.addEventListener('keydown', startAutoplay, { once: true })
+      window.addEventListener('touchstart', startAutoplay, { once: true })
+    }
+    return () => {
+      window.removeEventListener('pointerdown', startAutoplay)
+      window.removeEventListener('keydown', startAutoplay)
+      window.removeEventListener('touchstart', startAutoplay)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tracks, currentTrack, isPlaying])
+
+  // 搜索关键词变化时 debounce 重新加载（500ms）
+  useEffect(() => {
+    const t = setTimeout(() => {
+      loadMusic(searchQuery, activeCategory, activeRegion, activeMood)
+    }, searchQuery ? 500 : 0)
+    return () => clearTimeout(t)
+  }, [searchQuery, loadMusic, activeCategory, activeRegion, activeMood])
+
+  // 分类/地区/心情变化时立即重新加载
+  useEffect(() => {
+    loadMusic(searchQuery, activeCategory, activeRegion, activeMood)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeCategory, activeRegion, activeMood])
+
+  // 过滤后的曲目列表：直接使用API返回的tracks（API已处理过滤+在线搜索合并）
+  const filteredTracks = useCallback(() => tracks, [tracks])
 
   // 音频元素事件
   useEffect(() => {
@@ -140,8 +272,17 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [repeat, currentIndex, tracks])
 
+  const [playError, setPlayError] = useState<string | null>(null)
+
   const play = useCallback((track?: Track) => {
     if (track) {
+      // 在线曲目且明确不可播放（VIP/专辑版权限制）
+      if (track.source === 'online' && track.playable === false) {
+        setPlayError(`「${track.title}」因版权限制无法播放（VIP/专辑曲目）`)
+        setTimeout(() => setPlayError(null), 4000)
+        return
+      }
+      setPlayError(null)
       const idx = tracks.findIndex((t) => t.id === track.id)
       setCurrentTrack(track)
       setCurrentIndex(idx >= 0 ? idx : -1)
@@ -156,7 +297,13 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
       setTimeout(() => {
         if (audioRef.current) {
           audioRef.current.src = track.url
-          audioRef.current.play().catch(() => {})
+          audioRef.current.play().catch((err: Error) => {
+            // 在线曲目播放失败（版权/网络）
+            if (track.source === 'online') {
+              setPlayError(`「${track.title}」播放失败，可能因版权限制或网络问题`)
+              setTimeout(() => setPlayError(null), 4000)
+            }
+          })
         }
       }, 0)
     } else if (currentTrack && audioRef.current) {
@@ -170,21 +317,24 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
 
   const toggle = useCallback(() => {
     if (!currentTrack) {
-      // 首次播放：从第一首开始
-      if (tracks.length > 0) play(tracks[0])
+      // 首次播放：从过滤后的第一首开始
+      const list = filteredTracks()
+      if (list.length > 0) play(list[0])
       return
     }
     if (isPlaying) pause()
     else play()
-  }, [currentTrack, isPlaying, tracks, play, pause])
+  }, [currentTrack, isPlaying, play, pause, filteredTracks])
 
   const next = useCallback(() => {
-    if (tracks.length === 0) return
-    let idx = currentIndex + 1
-    if (idx >= tracks.length) idx = repeat === 'all' ? 0 : -1
-    if (idx >= 0) play(tracks[idx])
+    // 优先在过滤列表内顺序播放
+    const list = filteredTracks()
+    if (list.length === 0) return
+    let idx = list.findIndex((t) => t.id === currentTrack?.id) + 1
+    if (idx >= list.length) idx = repeat === 'all' ? 0 : -1
+    if (idx >= 0) play(list[idx])
     else pause()
-  }, [tracks, currentIndex, repeat, play, pause])
+  }, [filteredTracks, currentTrack, repeat, play, pause])
 
   const prev = useCallback(() => {
     if (tracks.length === 0) return
@@ -193,10 +343,11 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
       audioRef.current.currentTime = 0
       return
     }
-    let idx = currentIndex - 1
-    if (idx < 0) idx = repeat === 'all' ? tracks.length - 1 : 0
-    play(tracks[idx])
-  }, [tracks, currentIndex, repeat, play])
+    const list = filteredTracks()
+    let idx = list.findIndex((t) => t.id === currentTrack?.id) - 1
+    if (idx < 0) idx = repeat === 'all' ? list.length - 1 : 0
+    play(list[idx])
+  }, [tracks, filteredTracks, currentTrack, repeat, play])
 
   const setVolume = useCallback((v: number) => {
     setVolumeState(v)
@@ -222,16 +373,26 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const value: MusicContextValue = {
     currentTrack, isPlaying, volume, progress, duration,
     favorites, history, repeat,
-    tracks, categories,
+    tracks, categories, regions, moods,
     play, pause, toggle, next, prev,
     setVolume, seek, toggleFavorite, setRepeat,
     panelOpen, setPanelOpen, libraryOpen, setLibraryOpen,
+    searchQuery, setSearchQuery,
+    activeCategory, setActiveCategory,
+    activeRegion, setActiveRegion,
+    activeMood, setActiveMood,
+    filteredTracks: filteredTracks(),
+    searching, resultHint, onlineStatus, localCount, onlineCount,
+    playError,
+    autoplayPrompt,
   }
 
   return (
     <MusicContext.Provider value={value}>
       {children}
-      <audio ref={audioRef} preload="metadata" crossOrigin="anonymous" />
+      {/* 移除 crossOrigin="anonymous"：SoundHelix 等公开音频源不返回 CORS 头，
+          crossOrigin 会导致浏览器拒绝加载。普通播放不需要 CORS。 */}
+      <audio ref={audioRef} preload="metadata" />
       <MusicPanel />
     </MusicContext.Provider>
   )
@@ -241,30 +402,59 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
 function MusicPanel() {
   const m = useMusic()
   const [reduceMotion, setReduceMotion] = useState(false)
+  const searchInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
     setReduceMotion(mq.matches)
   }, [])
 
+  // Cmd/Ctrl+F 唤起搜索
+  useEffect(() => {
+    if (!m.panelOpen) return
+    function onKey(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        searchInputRef.current?.focus()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [m.panelOpen])
+
   if (!m.currentTrack && !m.panelOpen) {
-    // 迷你入口按钮
+    // 迷你入口按钮 + 自动播放提示
     return (
-      <button
-        onClick={() => { m.setPanelOpen(true); if (!m.currentTrack && m.tracks.length > 0) m.play(m.tracks[0]) }}
-        className="fixed bottom-4 left-4 z-[9997] w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
-        style={{
-          background: 'linear-gradient(135deg, rgba(0,255,159,0.15), rgba(0,212,255,0.1))',
-          border: '1px solid rgba(0,255,159,0.3)',
-          boxShadow: '0 0 15px rgba(0,255,159,0.2)',
-        }}
-        aria-label="打开音乐播放器"
-        title="背景音乐"
-      >
-        <svg className="w-5 h-5 text-[#00ff9f]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 19V6l12-3v13M9 19c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3zm12-3c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z" />
-        </svg>
-      </button>
+      <>
+        {/* 自动播放提示气泡 */}
+        {m.autoplayPrompt && (
+          <div
+            className="fixed bottom-6 left-20 z-[9997] px-3 py-2 rounded-md font-mono text-[11px] text-[#00ff9f] animate-pulse pointer-events-none"
+            style={{
+              background: 'rgba(0,255,159,0.08)',
+              border: '1px solid rgba(0,255,159,0.3)',
+              boxShadow: '0 0 20px rgba(0,255,159,0.15)',
+            }}
+          >
+            {m.autoplayPrompt}
+          </div>
+        )}
+        <button
+          onClick={() => { m.setPanelOpen(true); if (!m.currentTrack && m.tracks.length > 0) m.play(m.tracks[0]) }}
+          className="fixed bottom-4 left-4 z-[9997] w-11 h-11 rounded-full flex items-center justify-center transition-all duration-300 hover:scale-110"
+          style={{
+            background: 'linear-gradient(135deg, rgba(0,255,159,0.15), rgba(0,212,255,0.1))',
+            border: '1px solid rgba(0,255,159,0.3)',
+            boxShadow: '0 0 15px rgba(0,255,159,0.2)',
+          }}
+          aria-label="打开音乐播放器"
+          title="背景音乐"
+        >
+          <svg className="w-5 h-5 text-[#00ff9f]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 19V6l12-3v13M9 19c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3zm12-3c0 1.657-1.343 3-3 3s-3-1.343-3-3 1.343-3 3-3 3 1.343 3 3z" />
+          </svg>
+        </button>
+      </>
     )
   }
 
@@ -398,24 +588,98 @@ function MusicPanel() {
           </div>
         </div>
 
-        {/* 展开区：音乐库 + 历史 */}
+        {/* 展开区：搜索 + 筛选 + 音乐库 + 历史 */}
         {m.panelOpen && (
-          <div className="bg-[#0a0a0f]/95 backdrop-blur-md border-t border-[#1a1a1a] max-h-[40vh] overflow-y-auto">
+          <div className="bg-[#0a0a0f]/95 backdrop-blur-md border-t border-[#1a1a1a] max-h-[50vh] overflow-y-auto scrollbar-hide">
             <div className="max-w-4xl mx-auto p-4">
-              {/* 分类标签 + 库/历史切换 */}
+              {/* 搜索框 */}
+              <div className="relative mb-3">
+                <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#555]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={m.searchQuery}
+                  onChange={(e) => m.setSearchQuery(e.target.value)}
+                  placeholder="搜索歌曲、歌手... (Ctrl+F)"
+                  className="w-full pl-8 pr-3 py-1.5 rounded-sm text-xs font-mono bg-[#111] border border-[#222] text-white placeholder:text-[#555] focus:border-[#00ff9f]/50 focus:outline-none transition-colors"
+                />
+                {m.searchQuery && (
+                  <button
+                    onClick={() => m.setSearchQuery('')}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-[#555] hover:text-[#ff0080] text-xs"
+                    aria-label="清空搜索"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+
+              {/* 心情推荐栏 */}
+              {m.moods.length > 0 && (
+                <div className="mb-3">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="font-mono text-[10px] text-[#555] mr-1">心情:</span>
+                    <button
+                      onClick={() => m.setActiveMood('all')}
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-mono border transition-all ${
+                        m.activeMood === 'all'
+                          ? 'bg-[#00ff9f]/10 text-[#00ff9f] border-[#00ff9f]/30'
+                          : 'border-[#222] text-[#666] hover:border-[#00ff9f]/50 hover:text-[#00ff9f]'
+                      }`}
+                    >
+                      全部
+                    </button>
+                    {m.moods.map((mo) => (
+                      <button
+                        key={mo.key}
+                        onClick={() => m.setActiveMood(m.activeMood === mo.key ? 'all' : mo.key)}
+                        className={`px-2.5 py-1 rounded-full text-[10px] font-mono border transition-all flex items-center gap-1 ${
+                          m.activeMood === mo.key
+                            ? 'border-current'
+                            : 'border-[#222] text-[#666] hover:border-current/50'
+                        }`}
+                        style={m.activeMood === mo.key ? { color: mo.color, background: `${mo.color}15`, borderColor: `${mo.color}50` } : {}}
+                        title={mo.description}
+                      >
+                        <span>{mo.icon}</span>
+                        <span>{mo.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* 分类标签 + 地区 + 库/历史切换 */}
               <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
                 <div className="flex items-center gap-1.5 flex-wrap">
                   {m.categories.map((c) => (
                     <button
                       key={c.id}
-                      onClick={() => m.setLibraryOpen(false)}
-                      className="px-2.5 py-1 rounded-full text-[10px] font-mono border border-[#222] text-[#666] hover:border-[#00ff9f]/50 hover:text-[#00ff9f] transition-all"
+                      onClick={() => { m.setActiveCategory(c.id); m.setLibraryOpen(false) }}
+                      className={`px-2.5 py-1 rounded-full text-[10px] font-mono border transition-all ${
+                        m.activeCategory === c.id
+                          ? 'bg-[#00ff9f]/10 text-[#00ff9f] border-[#00ff9f]/30'
+                          : 'border-[#222] text-[#666] hover:border-[#00ff9f]/50 hover:text-[#00ff9f]'
+                      }`}
                     >
                       {c.name}
                     </button>
                   ))}
                 </div>
                 <div className="flex items-center gap-1">
+                  {/* 地区筛选 */}
+                  <select
+                    value={m.activeRegion}
+                    onChange={(e) => m.setActiveRegion(e.target.value)}
+                    className="px-2 py-1 rounded-full text-[10px] font-mono bg-[#111] border border-[#222] text-[#888] hover:border-[#00ff9f]/50 focus:outline-none cursor-pointer"
+                    aria-label="地区筛选"
+                  >
+                    {m.regions.map((r) => (
+                      <option key={r.id} value={r.id}>{r.name}</option>
+                    ))}
+                  </select>
                   <button
                     onClick={() => m.setLibraryOpen(false)}
                     className={`px-2.5 py-1 rounded-full text-[10px] font-mono transition-all ${!m.libraryOpen ? 'bg-[#00ff9f]/10 text-[#00ff9f] border border-[#00ff9f]/30' : 'text-[#666] border border-[#222]'}`}
@@ -439,31 +703,99 @@ function MusicPanel() {
                 </div>
               </div>
 
+              {/* 搜索结果统计 */}
+              {!m.libraryOpen && (
+                <div className="mb-2 font-mono text-[10px] text-[#555] flex items-center justify-between flex-wrap gap-1">
+                  <span className="flex items-center gap-2 flex-wrap">
+                    {m.searching ? (
+                      <span className="text-[#00d4ff] flex items-center gap-1">
+                        <span className="animate-spin inline-block">⟳</span> 在线搜索中...
+                      </span>
+                    ) : m.searchQuery ? (
+                      <>
+                        <span>▸ 共 {m.filteredTracks.length} 首</span>
+                        {m.localCount > 0 && <span className="text-[#00ff9f]">库内 {m.localCount}</span>}
+                        {m.onlineCount > 0 && <span className="text-[#00d4ff]">在线 {m.onlineCount}</span>}
+                        {m.onlineStatus === 'failed' && <span className="text-[#ff6699]">在线搜索失败</span>}
+                      </>
+                    ) : (
+                      <span>▸ 共 {m.filteredTracks.length} 首</span>
+                    )}
+                  </span>
+                  {(m.searchQuery || m.activeCategory !== 'all' || m.activeRegion !== 'all' || m.activeMood !== 'all') && (
+                    <button
+                      onClick={() => {
+                        m.setSearchQuery('')
+                        m.setActiveCategory('all')
+                        m.setActiveRegion('all')
+                        m.setActiveMood('all')
+                      }}
+                      className="text-[#666] hover:text-[#ff0080] transition-colors"
+                    >
+                      清空筛选
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* 播放错误提示 */}
+              {m.playError && (
+                <div className="mb-2 px-3 py-2 rounded-sm font-mono text-[10px] text-[#ff6699] flex items-center gap-2"
+                  style={{ background: 'rgba(255,0,128,0.08)', border: '1px solid rgba(255,0,128,0.3)' }}>
+                  <span>⚠</span>
+                  <span className="flex-1">{m.playError}</span>
+                </div>
+              )}
+
               {/* 曲目列表 */}
               <div className="space-y-1">
-                {(m.libraryOpen ? m.history : m.tracks).map((track) => {
+                {(m.libraryOpen ? m.history : m.filteredTracks).map((track) => {
                   const isCurrent = m.currentTrack?.id === track.id
                   const isFav = m.favorites.includes(track.id)
+                  const isOnline = track.source === 'online'
+                  const notPlayable = isOnline && track.playable === false
                   return (
                     <button
                       key={track.id}
                       onClick={() => m.play(track)}
-                      className={`w-full flex items-center gap-3 px-2 py-2 rounded text-left transition-all group ${isCurrent ? 'bg-[#00ff9f]/5' : 'hover:bg-[#111]'}`}
+                      className={`w-full flex items-center gap-3 px-2 py-2 rounded text-left transition-all group ${isCurrent ? 'bg-[#00ff9f]/5' : 'hover:bg-[#111]'} ${notPlayable ? 'opacity-50' : ''}`}
                     >
-                      <span className="font-mono text-[10px] text-[#444] w-4 text-center">
-                        {isCurrent && m.isPlaying ? '▶' : track.id.replace('t', '')}
+                      <span className="font-mono text-[10px] text-[#444] w-4 text-center shrink-0">
+                        {isCurrent && m.isPlaying ? '▶' : (m.libraryOpen ? m.history.indexOf(track) + 1 : m.filteredTracks.indexOf(track) + 1)}
                       </span>
-                      <div className="w-6 h-6 rounded shrink-0" style={{ background: track.cover }} />
+                      {/* 封面：在线曲目显示图片，本地显示色块 */}
+                      {isOnline && track.cover && track.cover.startsWith('http') ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={track.cover} alt={track.title} className="w-6 h-6 rounded shrink-0 object-cover" />
+                      ) : (
+                        <div className="w-6 h-6 rounded shrink-0" style={{ background: track.cover }} />
+                      )}
                       <div className="flex-1 min-w-0">
-                        <p className={`font-mono text-xs truncate ${isCurrent ? 'text-[#00ff9f]' : 'text-[#ccc]'}`}>{track.title}</p>
-                        <p className="font-mono text-[10px] text-[#555] truncate">{track.artist}</p>
+                        <p className={`font-mono text-xs truncate ${isCurrent ? 'text-[#00ff9f]' : notPlayable ? 'text-[#888] line-through' : 'text-[#ccc]'}`}>
+                          {track.title}
+                          {notPlayable && <span className="ml-1 text-[#ff6699]">[VIP]</span>}
+                        </p>
+                        <p className="font-mono text-[10px] text-[#555] truncate">
+                          {track.artist}
+                          {track.album && <span className="text-[#444]"> · {track.album}</span>}
+                        </p>
                       </div>
-                      <span className="font-mono text-[10px] text-[#444] hidden sm:inline">
+                      {/* 来源标签 */}
+                      <span className="font-mono text-[9px] px-1.5 py-0.5 rounded-full shrink-0 hidden sm:inline"
+                        style={{
+                          background: isOnline ? 'rgba(0,212,255,0.1)' : 'rgba(0,255,159,0.1)',
+                          color: isOnline ? '#00d4ff' : '#00ff9f',
+                          border: `1px solid ${isOnline ? 'rgba(0,212,255,0.2)' : 'rgba(0,255,159,0.2)'}`,
+                        }}
+                      >
+                        {isOnline ? '30秒试听' : '库内'}
+                      </span>
+                      <span className="font-mono text-[10px] text-[#444] hidden sm:inline shrink-0">
                         {formatTime(track.duration)}
                       </span>
                       <button
                         onClick={(e) => { e.stopPropagation(); m.toggleFavorite(track.id) }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                         aria-label="收藏"
                       >
                         <svg className="w-3.5 h-3.5" fill={isFav ? 'currentColor' : 'none'} stroke="currentColor" viewBox="0 0 24 24" style={{ color: isFav ? '#ff0080' : '#666' }}>
@@ -475,6 +807,27 @@ function MusicPanel() {
                 })}
                 {m.libraryOpen && m.history.length === 0 && (
                   <p className="font-mono text-xs text-[#444] text-center py-6">暂无播放历史</p>
+                )}
+                {!m.libraryOpen && m.filteredTracks.length === 0 && !m.searching && (
+                  <div className="text-center py-8 px-4">
+                    <p className="font-mono text-xs text-[#555] mb-2">
+                      {m.searchQuery ? `未找到与 "${m.searchQuery}" 相关的曲目` : '当前筛选条件下暂无曲目'}
+                    </p>
+                    {/* 明确区分"无匹配结果"与"功能异常" */}
+                    {m.resultHint && (
+                      <p className="font-mono text-[10px] text-[#ff6699]">{m.resultHint}</p>
+                    )}
+                    {m.searchQuery && m.onlineStatus === 'failed' && (
+                      <p className="font-mono text-[10px] text-[#888] mt-1">
+                        在线搜索服务暂时不可用，仅显示本地库结果
+                      </p>
+                    )}
+                    {m.searchQuery && m.onlineStatus === 'success' && (
+                      <p className="font-mono text-[10px] text-[#666] mt-1">
+                        已搜索本地库和网易云在线曲库，确实无匹配结果
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
