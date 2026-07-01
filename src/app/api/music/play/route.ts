@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server'
 
-// 网易云音乐播放重定向接口
-// 解决HTTPS页面无法加载HTTP音频资源的混合内容问题
+// 网易云音乐播放重定向接口 + 搜索调试接口
 // 流程：前端请求 /api/music/play?netease_id=<id>
 //       → 服务端调用网易云outer/url获取302的Location
 //       → 将http://替换为https://
@@ -10,6 +9,40 @@ import { NextResponse } from 'next/server'
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
   const neteaseId = searchParams.get('netease_id')
+  const debug = searchParams.get('debug') // 调试模式
+
+  // 调试模式：测试网易云搜索
+  if (debug === 'search') {
+    const keyword = searchParams.get('keyword') || '周杰伦'
+    try {
+      const body = `s=${encodeURIComponent(keyword)}&type=1&limit=5`
+      const resp = await fetch('https://music.163.com/api/search/get', {
+        method: 'POST',
+        headers: {
+          'Referer': 'https://music.163.com',
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body,
+      })
+      const data = await resp.json()
+      const songs = data?.result?.songs || []
+      return NextResponse.json({
+        keyword,
+        body_sent: body,
+        code: data.code,
+        songCount: data.result?.songCount,
+        songs: songs.map((s: any) => ({
+          id: s.id,
+          name: s.name,
+          artist: s.artists?.map((a: any) => a.name).join(','),
+          fee: s.fee,
+        })),
+      })
+    } catch (e) {
+      return NextResponse.json({ error: e instanceof Error ? e.message : 'unknown' })
+    }
+  }
 
   if (!neteaseId) {
     return NextResponse.json({ error: '缺少 netease_id 参数' }, { status: 400 })
@@ -21,7 +54,7 @@ export async function GET(request: Request) {
       `https://music.163.com/song/media/outer/url?id=${neteaseId}.mp3`,
       {
         method: 'GET',
-        redirect: 'manual', // 不跟随重定向，获取302的Location
+        redirect: 'manual',
         headers: {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
           'Referer': 'https://music.163.com',
@@ -29,26 +62,20 @@ export async function GET(request: Request) {
       }
     )
 
-    // 网易云返回302重定向到实际MP3地址
     if (response.status === 302 || response.status === 301) {
       let location = response.headers.get('location') || ''
       if (!location) {
         return NextResponse.json({ error: '未获取到播放地址' }, { status: 502 })
       }
-      // 将http://替换为https://，解决HTTPS页面混合内容问题
       if (location.startsWith('http://')) {
         location = 'https://' + location.slice(7)
       }
-      // 重定向到HTTPS的CDN地址
       return NextResponse.redirect(location, {
         status: 302,
-        headers: {
-          'Cache-Control': 'public, max-age=3600', // CDN地址缓存1小时
-        },
+        headers: { 'Cache-Control': 'public, max-age=3600' },
       })
     }
 
-    // 部分歌曲可能直接返回200（无版权时返回空内容或错误页）
     if (response.status === 200) {
       return NextResponse.json({ error: '该歌曲暂时无法播放（可能因版权限制）' }, { status: 502 })
     }
