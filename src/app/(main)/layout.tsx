@@ -3,7 +3,6 @@
 import { Component } from 'react'
 import Header from '@/components/layout/Header'
 import Footer from '@/components/layout/Footer'
-import AIChat from '@/components/ai/AIChat'
 
 class ErrorBoundary extends Component<{children: React.ReactNode}, {hasError: boolean}> {
   constructor(props: {children: React.ReactNode}) {
@@ -37,7 +36,6 @@ export default function MainLayout({
       <Header />
       <main id="main-content" className="min-h-screen">{children}</main>
       <Footer />
-      <AIChat />
     </ErrorBoundary>
   )
 }

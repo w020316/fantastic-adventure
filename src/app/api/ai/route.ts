@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     })
   }
 
-  const apiKey = process.env.DEEPSEEK_API_KEY
+  const apiKey = process.env.AGNES_API_KEY
   if (!apiKey) {
     return new Response(JSON.stringify({ error: 'AI 服务暂未配置' }), {
       status: 200,
@@ -102,14 +102,14 @@ export async function POST(request: NextRequest) {
       { role: 'user' as const, content: message.trim() },
     ]
 
-    const response = await fetch('https://api.deepseek.com/chat/completions', {
+    const response = await fetch('https://api.agnes-ai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model: 'agnes-2.0-flash',
         messages,
         max_tokens: 800,
         stream: true,
@@ -118,7 +118,7 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error('DeepSeek API error:', response.status, errorText)
+      console.error('Agnes AI API error:', response.status, errorText)
       return new Response(JSON.stringify({ error: 'AI 服务暂时不可用' }), {
         status: 200,
         headers: { 'Content-Type': 'application/json' },

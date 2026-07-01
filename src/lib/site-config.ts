@@ -8,11 +8,22 @@ export const SITE_CONFIG = {
   authorNameCn: '周末',
   authorNameEn: 'Cris',
   // 版本号：每次发版递增，用户首次访问新版本时弹窗提示更新内容
-  version: '1.2.0',
+  version: '1.3.0',
 }
 
 // 版本更新日志（最新版本放最前）
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: '1.3.0',
+    date: '2026-06-28',
+    items: [
+      '新增背景音乐播放器：支持播放/暂停/切歌/音量/进度控制，跨页面无缝续播',
+      '音乐库分类展示（电子/氛围/节奏），支持收藏与播放历史记录',
+      'AI 助手升级至 Agnes AI（agnes-2.0-flash），支持流式对话与上下文理解',
+      'AI 助手新增语音输入（Web Speech API）与语音播报（TTS）',
+      'AI 助手支持 Ctrl/Cmd+K 快捷键唤醒，对话历史持久化存储',
+    ],
+  },
   {
     version: '1.2.0',
     date: '2026-06-28',

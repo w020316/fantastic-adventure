@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next'
 import { Inter, Space_Grotesk, JetBrains_Mono } from 'next/font/google'
 import { Toaster } from 'sonner'
 import UpdateNoticeModal from '@/components/landing/UpdateNoticeModal'
+import { MusicPlayerProvider } from '@/components/music/MusicPlayer'
+import AIChat from '@/components/ai/AIChat'
 import './globals.css'
 
 // 字体加载
@@ -77,10 +79,13 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="font-body antialiased">
-        <div className="min-h-screen">
-          {children}
-        </div>
-        <UpdateNoticeModal />
+        <MusicPlayerProvider>
+          <div className="min-h-screen">
+            {children}
+          </div>
+          <UpdateNoticeModal />
+          <AIChat />
+        </MusicPlayerProvider>
         <Toaster
           position="top-center"
           toastOptions={{
