@@ -165,24 +165,23 @@ interface ITunesTrack {
   artworkUrl100: string
 }
 
-async function searchOnline(keyword: string, limit = 30): Promise<{ tracks: Track[]; error?: string }> {
-  const cacheKey = keyword.trim().toLowerCase()
-  const cached = searchCache.get(cacheKey)
-  if (cached && Date.now() - cached.ts < CACHE_TTL) {
-    return { tracks: cached.data }
-  }
-
+// 单区域搜索（内部函数）
+async function searchOneRegion(
+  keyword: string,
+  country: string,
+  limit: number,
+  dispatcher: any
+): Promise<ITunesTrack[]> {
   try {
-    const dispatcher = await getDispatcher()
     const params = new URLSearchParams()
     params.append('term', keyword)
     params.append('media', 'music')
     params.append('entity', 'song')
     params.append('limit', String(limit))
-    params.append('country', 'cn')
+    params.append('country', country)
 
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 8000)
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
 
     const fetchOptions: RequestInit & { dispatcher?: any } = {
       method: 'GET',
@@ -194,15 +193,44 @@ async function searchOnline(keyword: string, limit = 30): Promise<{ tracks: Trac
     const response = await fetch(`https://itunes.apple.com/search?${params.toString()}`, fetchOptions)
     clearTimeout(timeoutId)
 
-    if (!response.ok) {
-      return { tracks: [], error: `在线搜索服务不可用 (${response.status})` }
+    if (!response.ok) return []
+    const data = await response.json()
+    return data?.results || []
+  } catch {
+    return []
+  }
+}
+
+// 多区域搜索：cn + us 并行，合并去重，返回真实歌曲（含30秒预览）
+// 支持中文/拼音/英文关键词直接透传给 iTunes
+async function searchOnline(keyword: string, limit = 50): Promise<{ tracks: Track[]; error?: string }> {
+  const cacheKey = keyword.trim().toLowerCase()
+  const cached = searchCache.get(cacheKey)
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    return { tracks: cached.data }
+  }
+
+  try {
+    const dispatcher = await getDispatcher()
+    // 并行搜索 cn 和 us 区域（cn 返回中文标题，us 返回英文翻译，合并提供更全结果）
+    const [cnSongs, usSongs] = await Promise.all([
+      searchOneRegion(keyword, 'cn', limit, dispatcher),
+      searchOneRegion(keyword, 'us', limit, dispatcher),
+    ])
+
+    // 合并去重（按 trackId）
+    const seen = new Set<number>()
+    const allSongs: ITunesTrack[] = []
+    for (const song of [...cnSongs, ...usSongs]) {
+      if (song.trackId && !seen.has(song.trackId)) {
+        seen.add(song.trackId)
+        allSongs.push(song)
+      }
     }
 
-    const data = await response.json()
-    const songs: ITunesTrack[] = data?.results || []
-
     // 仅保留有预览URL的曲目（30秒官方试听，始终可播放）
-    const tracks: Track[] = songs
+    // 不再做关键词过滤：iTunes 搜索引擎已经做了相关性排序，直接信任结果
+    const tracks: Track[] = allSongs
       .filter((song) => song.previewUrl)
       .map((song) => ({
         id: `online_${song.trackId}`,
@@ -278,23 +306,18 @@ export async function GET(request: Request) {
   if (region !== 'all') localMatches = localMatches.filter((t) => t.region === region)
   if (mood !== 'all') localMatches = localMatches.filter((t) => t.mood && t.mood.split(',').includes(mood))
 
-  const onlineResult = await searchOnline(q, 30)
+  // 在线搜索：多区域并行（cn+us），不再做关键词过滤，直接信任 iTunes 相关性排序
+  const onlineResult = await searchOnline(q, 50)
   let onlineTracks = onlineResult.tracks
   const rawOnlineCount = onlineTracks.length
 
-  // 精准度过滤：标题或歌手必须包含关键词
-  const keywords = qLower.split(/\s+/).filter(Boolean)
-  onlineTracks = onlineTracks.filter((t) => {
-    const titleLower = t.title.toLowerCase()
-    const artistLower = t.artist.toLowerCase()
-    return keywords.some((kw) => titleLower.includes(kw) || artistLower.includes(kw))
-  })
-
-  if (region !== 'all') {
-    onlineTracks = region === 'cn' ? onlineTracks : []
+  // 仅在用户明确选择了 region=intl 时过滤掉中文区结果（保留所有在线结果）
+  // 默认 region=all 时保留全部，让用户能看到所有搜索结果
+  if (region === 'intl') {
+    onlineTracks = []
   }
 
-  // 合并：本地优先，去重
+  // 合并：本地优先，去重（按 trackId 去重，避免同一首歌重复）
   const seen = new Set<string>()
   const merged: Track[] = []
   for (const t of localMatches) {
@@ -328,9 +351,7 @@ export async function GET(request: Request) {
     resultHint: merged.length === 0
       ? (onlineResult.error
           ? `搜索异常：${onlineResult.error}（已为你查找本地库，同样无匹配）`
-          : rawOnlineCount > 0
-            ? `确实未找到与"${q}"精确匹配的音乐（iTunes ${rawOnlineCount}条模糊结果已过滤）`
-            : `确实未找到与"${q}"匹配的音乐`)
+          : `未找到与"${q}"匹配的音乐，请尝试其他关键词（如歌手英文名或拼音）`)
       : null,
   })
 }

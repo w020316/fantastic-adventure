@@ -819,12 +819,12 @@ function MusicPanel() {
                     )}
                     {m.searchQuery && m.onlineStatus === 'failed' && (
                       <p className="font-mono text-[10px] text-[#888] mt-1">
-                        在线搜索服务暂时不可用，仅显示本地库结果
+                        iTunes 在线搜索暂时不可用，仅显示本地库结果
                       </p>
                     )}
                     {m.searchQuery && m.onlineStatus === 'success' && (
                       <p className="font-mono text-[10px] text-[#666] mt-1">
-                        已搜索本地库和网易云在线曲库，确实无匹配结果
+                        已搜索本地库和 iTunes 在线曲库，确实无匹配结果。可尝试歌手英文名或拼音。
                       </p>
                     )}
                   </div>
