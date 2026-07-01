@@ -46,20 +46,23 @@ async function searchNetease(keyword: string, limit = 30): Promise<{ tracks: Tra
   }
 
   try {
-    const params = new URLSearchParams()
-    params.append('s', keyword)
-    params.append('type', '1')
-    params.append('limit', String(limit))
-
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000)
 
-    const response = await fetch(`https://music.163.com/api/search/get?${params.toString()}`, {
-      method: 'GET',
+    // 使用POST请求避免GET URL编码在海外服务器上的问题
+    const body = new URLSearchParams()
+    body.append('s', keyword)
+    body.append('type', '1')
+    body.append('limit', String(limit))
+
+    const response = await fetch('https://music.163.com/api/search/get', {
+      method: 'POST',
       headers: {
         'Referer': 'https://music.163.com',
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'Content-Type': 'application/x-www-form-urlencoded',
       },
+      body: body.toString(),
       signal: controller.signal,
     })
     clearTimeout(timeoutId)
