@@ -12,7 +12,7 @@ interface Track {
   duration: number
   url: string
   cover: string
-  source?: 'local' | 'online' // 来源标识
+  source?: 'local' | 'online' | 'netease' // 来源标识：local=本地库 online=iTunes30秒预览 netease=网易云完整播放
   onlineId?: string // 在线歌曲ID
   album?: string // 专辑名
   playable?: boolean // 是否可播放（在线曲目可能因版权受限）
@@ -277,7 +277,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
   const play = useCallback((track?: Track) => {
     if (track) {
       // 在线曲目且明确不可播放（VIP/专辑版权限制）
-      if (track.source === 'online' && track.playable === false) {
+      if ((track.source === 'online' || track.source === 'netease') && track.playable === false) {
         setPlayError(`「${track.title}」因版权限制无法播放（VIP/专辑曲目）`)
         setTimeout(() => setPlayError(null), 4000)
         return
@@ -299,7 +299,7 @@ export function MusicPlayerProvider({ children }: { children: React.ReactNode })
           audioRef.current.src = track.url
           audioRef.current.play().catch((err: Error) => {
             // 在线曲目播放失败（版权/网络）
-            if (track.source === 'online') {
+            if (track.source === 'online' || track.source === 'netease') {
               setPlayError(`「${track.title}」播放失败，可能因版权限制或网络问题`)
               setTimeout(() => setPlayError(null), 4000)
             }
@@ -752,7 +752,8 @@ function MusicPanel() {
                 {(m.libraryOpen ? m.history : m.filteredTracks).map((track) => {
                   const isCurrent = m.currentTrack?.id === track.id
                   const isFav = m.favorites.includes(track.id)
-                  const isOnline = track.source === 'online'
+                  const isOnline = track.source === 'online' || track.source === 'netease'
+                  const isNetease = track.source === 'netease'
                   const notPlayable = isOnline && track.playable === false
                   return (
                     <button
@@ -780,15 +781,15 @@ function MusicPanel() {
                           {track.album && <span className="text-[#444]"> · {track.album}</span>}
                         </p>
                       </div>
-                      {/* 来源标签 */}
+                      {/* 来源标签：网易云=完整播放 / iTunes=30秒试听 / 本地=库内 */}
                       <span className="font-mono text-[9px] px-1.5 py-0.5 rounded-full shrink-0 hidden sm:inline"
                         style={{
-                          background: isOnline ? 'rgba(0,212,255,0.1)' : 'rgba(0,255,159,0.1)',
-                          color: isOnline ? '#00d4ff' : '#00ff9f',
-                          border: `1px solid ${isOnline ? 'rgba(0,212,255,0.2)' : 'rgba(0,255,159,0.2)'}`,
+                          background: isNetease ? 'rgba(168,85,247,0.15)' : isOnline ? 'rgba(0,212,255,0.1)' : 'rgba(0,255,159,0.1)',
+                          color: isNetease ? '#a855f7' : isOnline ? '#00d4ff' : '#00ff9f',
+                          border: `1px solid ${isNetease ? 'rgba(168,85,247,0.3)' : isOnline ? 'rgba(0,212,255,0.2)' : 'rgba(0,255,159,0.2)'}`,
                         }}
                       >
-                        {isOnline ? '30秒试听' : '库内'}
+                        {isNetease ? '完整播放' : isOnline ? '30秒试听' : '库内'}
                       </span>
                       <span className="font-mono text-[10px] text-[#444] hidden sm:inline shrink-0">
                         {formatTime(track.duration)}
@@ -819,12 +820,12 @@ function MusicPanel() {
                     )}
                     {m.searchQuery && m.onlineStatus === 'failed' && (
                       <p className="font-mono text-[10px] text-[#888] mt-1">
-                        iTunes 在线搜索暂时不可用，仅显示本地库结果
+                        网易云/iTunes 在线搜索暂时不可用，仅显示本地库结果
                       </p>
                     )}
                     {m.searchQuery && m.onlineStatus === 'success' && (
                       <p className="font-mono text-[10px] text-[#666] mt-1">
-                        已搜索本地库和 iTunes 在线曲库，确实无匹配结果。可尝试歌手英文名或拼音。
+                        已搜索本地库 + 网易云（完整播放）+ iTunes（30秒试听），确实无匹配结果。可尝试歌手英文名或拼音。
                       </p>
                     )}
                   </div>

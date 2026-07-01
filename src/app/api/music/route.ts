@@ -3,7 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { requireAdmin } from '@/lib/auth-guard'
 
 // 音乐库数据
-// 架构：数据库 MusicTrack 表（完整可播放曲目） + iTunes在线搜索（30秒预览）
+// 架构：数据库 MusicTrack 表（完整可播放曲目）
+//       + iTunes在线搜索（30秒预览，国际曲库）
+//       + 网易云音乐搜索（完整播放，华语曲库）
 // 数据库连接失败时 fallback 到内存预置库（保证可用性）
 
 interface Track {
@@ -15,12 +17,85 @@ interface Track {
   duration: number
   url: string
   cover: string
-  source: 'local' | 'online'
+  source: 'local' | 'online' | 'netease'
   onlineId?: string
   album?: string
   playable?: boolean
   mood?: string
   isHot?: boolean
+}
+
+// ============ 网易云音乐搜索（完整播放，非30秒预览）============
+// 接口：https://music.163.com/api/search/get?s=<keyword>&type=1&limit=30
+// 播放：通过 /api/music/play?netease_id=<id> 服务端重定向到HTTPS CDN
+// 优点：1)完整播放 2)支持中文歌手 3)无需cookie/加密 4)曲库全面
+interface NeteaseSong {
+  id: number
+  name: string
+  duration: number
+  fee: number // 0=免费 1=VIP 4=专辑 8=免费低音质
+  artists: { name: string }[]
+  album: { name: string; picUrl?: string }
+}
+
+async function searchNetease(keyword: string, limit = 30): Promise<{ tracks: Track[]; error?: string }> {
+  const cacheKey = `netease_${keyword.trim().toLowerCase()}`
+  const cached = searchCache.get(cacheKey)
+  if (cached && Date.now() - cached.ts < CACHE_TTL) {
+    return { tracks: cached.data }
+  }
+
+  try {
+    const params = new URLSearchParams()
+    params.append('s', keyword)
+    params.append('type', '1')
+    params.append('limit', String(limit))
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+    const response = await fetch(`https://music.163.com/api/search/get?${params.toString()}`, {
+      method: 'GET',
+      headers: {
+        'Referer': 'https://music.163.com',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+      signal: controller.signal,
+    })
+    clearTimeout(timeoutId)
+
+    if (!response.ok) return { tracks: [], error: `网易云搜索HTTP ${response.status}` }
+    const data = await response.json()
+    const songs: NeteaseSong[] = data?.result?.songs || []
+
+    // 过滤VIP/专辑歌曲（fee=1或4），仅保留可免费播放的（fee=0或8）
+    const tracks: Track[] = songs
+      .filter((s) => s.fee === 0 || s.fee === 8)
+      .map((s) => ({
+        id: `netease_${s.id}`,
+        title: s.name,
+        artist: s.artists?.map((a) => a.name).join(',') || '未知艺术家',
+        category: 'online',
+        region: 'cn',
+        duration: Math.floor((s.duration || 0) / 1000),
+        // 播放URL通过服务端重定向，解决HTTPS混合内容问题
+        url: `/api/music/play?netease_id=${s.id}`,
+        cover: s.album?.picUrl || '#888',
+        source: 'netease',
+        onlineId: String(s.id),
+        album: s.album?.name,
+        playable: true, // 网易云免费歌曲可完整播放
+      }))
+
+    searchCache.set(cacheKey, { data: tracks, ts: Date.now() })
+    return { tracks }
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'unknown'
+    if (msg.includes('abort') || msg.includes('timeout')) {
+      return { tracks: [], error: '网易云搜索超时' }
+    }
+    return { tracks: [], error: `网易云搜索失败：${msg}` }
+  }
 }
 
 interface Category {
@@ -306,34 +381,44 @@ export async function GET(request: Request) {
   if (region !== 'all') localMatches = localMatches.filter((t) => t.region === region)
   if (mood !== 'all') localMatches = localMatches.filter((t) => t.mood && t.mood.split(',').includes(mood))
 
-  // 在线搜索：多区域并行（cn+us），不再做关键词过滤，直接信任 iTunes 相关性排序
-  const onlineResult = await searchOnline(q, 50)
+  // 在线搜索：iTunes（30秒预览，国际曲库）+ 网易云（完整播放，华语曲库）并行
+  const [onlineResult, neteaseResult] = await Promise.all([
+    searchOnline(q, 50),
+    searchNetease(q, 30),
+  ])
   let onlineTracks = onlineResult.tracks
-  const rawOnlineCount = onlineTracks.length
+  const neteaseTracks = neteaseResult.tracks
+  const rawOnlineCount = onlineTracks.length + neteaseTracks.length
 
   // 仅在用户明确选择了 region=intl 时过滤掉中文区结果（保留所有在线结果）
   // 默认 region=all 时保留全部，让用户能看到所有搜索结果
   if (region === 'intl') {
     onlineTracks = []
+    // neteaseTracks 也清空（网易云都是华语）
+    // 但 neteaseTracks 是 const，所以下面合并时再过滤
   }
 
-  // 合并：本地优先，去重（按 trackId 去重，避免同一首歌重复）
+  // 合并：本地优先 → 网易云（完整播放，优先级高）→ iTunes（30秒预览，补充）
+  // 按 title+artist 去重
   const seen = new Set<string>()
   const merged: Track[] = []
-  for (const t of localMatches) {
+  const addTrack = (t: Track) => {
     const key = `${t.title}_${t.artist}`.toLowerCase()
     if (!seen.has(key)) {
       seen.add(key)
       merged.push(t)
     }
   }
-  for (const t of onlineTracks) {
-    const key = `${t.title}_${t.artist}`.toLowerCase()
-    if (!seen.has(key)) {
-      seen.add(key)
-      merged.push(t)
-    }
+  for (const t of localMatches) addTrack(t)
+  // 网易云优先（完整播放），intl过滤时跳过
+  if (region !== 'intl') {
+    for (const t of neteaseTracks) addTrack(t)
   }
+  for (const t of onlineTracks) addTrack(t)
+
+  // 合并错误信息
+  const errors = [onlineResult.error, neteaseResult.error].filter(Boolean)
+  const hasError = errors.length > 0 && merged.length === 0
 
   return NextResponse.json({
     categories: CATEGORIES,
@@ -342,15 +427,17 @@ export async function GET(request: Request) {
     tracks: merged,
     total: merged.length,
     localCount: localMatches.length,
-    onlineCount: onlineTracks.length,
+    onlineCount: onlineTracks.length + neteaseTracks.length,
+    itunesCount: onlineTracks.length,
+    neteaseCount: neteaseTracks.length,
     rawOnlineCount,
     query: { category, region, mood, q },
     source: 'mixed',
-    onlineStatus: onlineResult.error ? 'failed' : 'success',
-    onlineError: onlineResult.error,
+    onlineStatus: hasError ? 'failed' : (merged.length > localMatches.length ? 'success' : 'idle'),
+    onlineError: errors.join('; ') || undefined,
     resultHint: merged.length === 0
-      ? (onlineResult.error
-          ? `搜索异常：${onlineResult.error}（已为你查找本地库，同样无匹配）`
+      ? (hasError
+          ? `搜索异常：${errors.join('；')}（已为你查找本地库，同样无匹配）`
           : `未找到与"${q}"匹配的音乐，请尝试其他关键词（如歌手英文名或拼音）`)
       : null,
   })
