@@ -4,16 +4,50 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 
+interface ProjectMetric {
+  label?: string
+  value?: string | number
+  suffix?: string
+  display?: string
+}
+
 interface ProjectData {
   id: string
   title: string
+  subtitle?: string | null
   description: string
+  impact?: string | null
+  metrics?: ProjectMetric[] | null
   coverImage?: string | null
   demoUrl?: string | null
   repoUrl?: string | null
+  caseStudyUrl?: string | null
   techStack: string[]
   featured: boolean
   order: number
+}
+
+// 项目分类推断（与 ProjectsClient 保持一致）
+type ProjectCategory = '全栈' | '前端' | 'AI 应用' | '计算机视觉' | 'Java Web'
+
+const CATEGORY_CONFIG: Record<ProjectCategory, { color: string; bg: string; border: string }> = {
+  '全栈': { color: '#00ff9f', bg: 'rgba(0,255,159,0.1)', border: 'rgba(0,255,159,0.4)' },
+  '前端': { color: '#00d4ff', bg: 'rgba(0,212,255,0.1)', border: 'rgba(0,212,255,0.4)' },
+  'AI 应用': { color: '#ff0080', bg: 'rgba(255,0,128,0.1)', border: 'rgba(255,0,128,0.4)' },
+  '计算机视觉': { color: '#ffe600', bg: 'rgba(255,230,0,0.1)', border: 'rgba(255,230,0,0.4)' },
+  'Java Web': { color: '#ff8c00', bg: 'rgba(255,140,0,0.1)', border: 'rgba(255,140,0,0.4)' },
+}
+
+function inferCategory(techStack: string[]): ProjectCategory {
+  const stack = techStack.join(' ').toLowerCase()
+  if (['yolo', 'opencv', 'pytorch', 'tensorflow'].some((k) => stack.includes(k))) return '计算机视觉'
+  if (['deepseek', 'chromadb', 'rag', 'llm', '智能体', 'agent'].some((k) => stack.includes(k))) return 'AI 应用'
+  if (['java', 'tomcat', 'jsp', 'maven', 'spring boot', 'springboot'].some((k) => stack.includes(k))) return 'Java Web'
+  const hasFrontend = ['vue', 'react', 'next.js', 'nextjs'].some((k) => stack.includes(k))
+  const hasBackend = ['prisma', 'serverless', 'postgresql', 'node.js', 'nodejs', 'express', 'koa', 'mysql'].some((k) => stack.includes(k))
+  if (hasFrontend && hasBackend) return '全栈'
+  if (stack.includes('spring boot') || stack.includes('springboot')) return '全栈'
+  return '前端'
 }
 
 function GitHubIcon({ className }: { className?: string }) {
@@ -208,6 +242,10 @@ export default function ProjectDetailPage() {
   }
 
   const isGerenRiji = id === 'geren-riji'
+  const category = inferCategory(project.techStack)
+  const catConfig = CATEGORY_CONFIG[category]
+  const metrics = project.metrics ?? []
+  const hasMetrics = metrics.length > 0
 
   return (
     <div className="min-h-screen">
@@ -221,7 +259,14 @@ export default function ProjectDetailPage() {
               ← 返回项目列表
             </Link>
           </div>
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center flex-wrap gap-2 mb-4">
+            {/* 分类标签 */}
+            <span
+              className="cyber-tag text-[10px]"
+              style={{ background: catConfig.bg, borderColor: catConfig.border, color: catConfig.color }}
+            >
+              {category}
+            </span>
             {project.featured && (
               <span className="cyber-tag cyber-tag-yellow text-[10px]">★ 精选</span>
             )}
@@ -233,6 +278,14 @@ export default function ProjectDetailPage() {
           >
             {project.title}
           </h1>
+          {project.subtitle && (
+            <p
+              className="font-mono text-sm text-cyber-text-dim mb-4 tracking-wide"
+              style={{ animation: 'fadeInUp 0.5s ease 0.05s forwards', opacity: 0 }}
+            >
+              {project.subtitle}
+            </p>
+          )}
           {project.techStack.length > 0 && (
             <div
               className="flex flex-wrap gap-1.5 mb-6"
@@ -268,7 +321,7 @@ export default function ProjectDetailPage() {
                 style={{ borderColor: 'var(--color-cyber-blue)', color: 'var(--color-cyber-blue)' }}
               >
                 <ExternalLinkIcon className="w-3.5 h-3.5" />
-                在线演示
+                在线体验
               </a>
             )}
           </div>
@@ -289,6 +342,52 @@ export default function ProjectDetailPage() {
             {project.description}
           </p>
         </section>
+
+        {/* 量化指标 metrics（通用展示） */}
+        {hasMetrics && (
+          <section
+            className="cyber-card p-5 sm:p-6"
+            style={{ animation: 'fadeInUp 0.5s ease 0.35s forwards', opacity: 0 }}
+          >
+            <div className="section-title">
+              <span className="neon-text">▸</span> 量化指标
+              <span className="font-mono text-xs text-cyber-text-dim ml-2">METRICS</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {metrics.map((m, i) => (
+                <div
+                  key={i}
+                  className="rounded-[12px] border border-cyber-border bg-cyber-surface/50 p-4 text-center transition-all duration-300 hover:border-cyber-neon/40"
+                >
+                  <div className="font-display text-xl sm:text-2xl font-bold neon-text leading-none">
+                    {m.display ?? `${m.value ?? ''}${m.suffix ?? ''}`}
+                  </div>
+                  {m.label && (
+                    <div className="font-mono text-[11px] text-cyber-text-dim mt-2 tracking-wide">
+                      {m.label}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* 项目影响 IMPACT（通用展示） */}
+        {project.impact && (
+          <section
+            className="cyber-card p-5 sm:p-6"
+            style={{ animation: 'fadeInUp 0.5s ease 0.4s forwards', opacity: 0 }}
+          >
+            <div className="section-title">
+              <span className="neon-text-blue">▸</span> 项目影响
+              <span className="font-mono text-xs text-cyber-text-dim ml-2">IMPACT</span>
+            </div>
+            <div className="pl-4 border-l-2 border-cyber-neon">
+              <p className="text-cyber-text text-sm leading-relaxed">{project.impact}</p>
+            </div>
+          </section>
+        )}
 
         {/* 核心功能 - 仅心语日记项目展示 */}
         {isGerenRiji && (

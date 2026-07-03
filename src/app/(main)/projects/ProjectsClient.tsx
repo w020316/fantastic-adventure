@@ -27,6 +27,40 @@ interface Project {
   createdAt: string
 }
 
+// 项目分类推断：根据技术栈自动归类（无需改数据库 schema）
+type ProjectCategory = '全栈' | '前端' | 'AI 应用' | '计算机视觉' | 'Java Web'
+
+const CATEGORY_CONFIG: Record<ProjectCategory, { color: string; bg: string; border: string }> = {
+  '全栈': { color: '#00ff9f', bg: 'rgba(0,255,159,0.1)', border: 'rgba(0,255,159,0.4)' },
+  '前端': { color: '#00d4ff', bg: 'rgba(0,212,255,0.1)', border: 'rgba(0,212,255,0.4)' },
+  'AI 应用': { color: '#ff0080', bg: 'rgba(255,0,128,0.1)', border: 'rgba(255,0,128,0.4)' },
+  '计算机视觉': { color: '#ffe600', bg: 'rgba(255,230,0,0.1)', border: 'rgba(255,230,0,0.4)' },
+  'Java Web': { color: '#ff8c00', bg: 'rgba(255,140,0,0.1)', border: 'rgba(255,140,0,0.4)' },
+}
+
+function inferCategory(techStack: string[]): ProjectCategory {
+  const stack = techStack.join(' ').toLowerCase()
+  // 计算机视觉（优先级最高）
+  if (['yolo', 'opencv', 'pytorch', 'tensorflow'].some((k) => stack.includes(k))) {
+    return '计算机视觉'
+  }
+  // AI 应用
+  if (['deepseek', 'chromadb', 'rag', 'llm', '智能体', 'agent'].some((k) => stack.includes(k))) {
+    return 'AI 应用'
+  }
+  // Java Web
+  if (['java', 'tomcat', 'jsp', 'maven', 'spring boot', 'springboot'].some((k) => stack.includes(k))) {
+    return 'Java Web'
+  }
+  // 全栈：同时含前端框架 + 后端技术
+  const hasFrontend = ['vue', 'react', 'next.js', 'nextjs'].some((k) => stack.includes(k))
+  const hasBackend = ['prisma', 'serverless', 'postgresql', 'node.js', 'nodejs', 'express', 'koa', 'mysql'].some((k) => stack.includes(k))
+  if (hasFrontend && hasBackend) return '全栈'
+  if (stack.includes('spring boot') || stack.includes('springboot')) return '全栈'
+  // 默认前端
+  return '前端'
+}
+
 function GitHubIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="currentColor" viewBox="0 0 24 24">
@@ -59,21 +93,41 @@ function SearchIcon({ className }: { className?: string }) {
   )
 }
 
-// 项目卡片（保持原有赛博朋克风格）
+// 项目卡片（保持原有赛博朋克风格，增强视觉层次）
 function ProjectCard({ project, index }: { project: Project; index: number }) {
   const metrics = project.metrics ?? []
   const hasMetrics = metrics.length > 0
+  const category = inferCategory(project.techStack)
+  const catConfig = CATEGORY_CONFIG[category]
 
   return (
     <article
-      className="cyber-card group p-6 sm:p-8 flex flex-col"
+      className="cyber-card group relative p-6 sm:p-8 flex flex-col overflow-hidden"
       style={{ animation: `fadeInUp 0.5s ease ${index * 0.08}s forwards`, opacity: 0 }}
     >
+      {/* 顶部渐变装饰条（hover 时发光增强） */}
+      <div
+        className="absolute top-0 left-0 w-full h-[2px] opacity-50 group-hover:opacity-100 transition-opacity duration-300"
+        style={{ background: `linear-gradient(90deg, ${catConfig.color}, transparent)`, boxShadow: `0 0 10px ${catConfig.color}80` }}
+      />
+      {/* hover 时右上角光晕 */}
+      <div
+        className="absolute -top-20 -right-20 w-40 h-40 rounded-full blur-[60px] opacity-0 group-hover:opacity-20 transition-opacity duration-500 pointer-events-none"
+        style={{ background: catConfig.color }}
+      />
+
       <div className="flex items-start justify-between gap-4 mb-3">
         <div className="min-w-0">
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center flex-wrap gap-2 mb-2">
             <span className="font-mono text-xs text-[var(--color-text-tertiary)] tracking-widest">
               {String(index + 1).padStart(2, '0')}
+            </span>
+            {/* 分类标签 */}
+            <span
+              className="tag transition-all"
+              style={{ background: catConfig.bg, borderColor: catConfig.border, color: catConfig.color }}
+            >
+              {category}
             </span>
             {project.featured && (
               <span className="tag tag-brand">★ FEATURED</span>
@@ -106,7 +160,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
           {metrics.map((m, i) => (
             <div
               key={i}
-              className="rounded-[12px] border border-[var(--color-border-subtle)] bg-[rgba(255,255,255,0.02)] p-3"
+              className="rounded-[12px] border border-[var(--color-border-subtle)] bg-[rgba(255,255,255,0.02)] p-3 transition-all duration-300 hover:border-[var(--color-brand)]/40 hover:bg-[rgba(0,255,159,0.03)]"
             >
               <div className="font-display text-lg sm:text-xl font-bold neon-text leading-none">
                 {m.display ?? `${m.value ?? ''}${m.suffix ?? ''}`}
@@ -166,8 +220,23 @@ interface ProjectsClientProps {
 export default function ProjectsClient({ projects, allTechStacks }: ProjectsClientProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTech, setActiveTech] = useState<string>('all')
+  const [activeCategory, setActiveCategory] = useState<string>('all')
   // 排序：'order'（默认排序）| 'newest'（开发时间）| 'featured'（重要程度）
   const [sortBy, setSortBy] = useState<'order' | 'newest' | 'featured'>('order')
+
+  // 预计算每个项目的分类
+  const projectCategories = useMemo(() => {
+    const map = new Map<string, ProjectCategory>()
+    projects.forEach((p) => map.set(p.id, inferCategory(p.techStack)))
+    return map
+  }, [projects])
+
+  // 所有分类列表
+  const allCategories = useMemo(() => {
+    const set = new Set<ProjectCategory>()
+    projectCategories.forEach((c) => set.add(c))
+    return Array.from(set)
+  }, [projectCategories])
 
   // 过滤+搜索+排序
   const filteredProjects = useMemo(() => {
@@ -182,6 +251,11 @@ export default function ProjectsClient({ projects, allTechStacks }: ProjectsClie
         (p.subtitle?.toLowerCase().includes(q) ?? false) ||
         p.techStack.some((t) => t.toLowerCase().includes(q))
       )
+    }
+
+    // 分类筛选
+    if (activeCategory !== 'all') {
+      result = result.filter((p) => projectCategories.get(p.id) === activeCategory)
     }
 
     // 技术栈筛选
@@ -220,6 +294,7 @@ export default function ProjectsClient({ projects, allTechStacks }: ProjectsClie
   const resetFilters = useCallback(() => {
     setSearchQuery('')
     setActiveTech('all')
+    setActiveCategory('all')
     setSortBy('order')
   }, [])
 
@@ -276,6 +351,36 @@ export default function ProjectsClient({ projects, allTechStacks }: ProjectsClie
                   />
                 </div>
 
+                {/* 分类筛选 */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-mono text-[10px] text-[var(--color-text-tertiary)] tracking-widest">CATEGORY:</span>
+                  <button
+                    onClick={() => setActiveCategory('all')}
+                    className={`tag transition-all ${activeCategory === 'all' ? 'tag-brand' : ''}`}
+                    style={activeCategory === 'all' ? {} : { cursor: 'pointer' }}
+                  >
+                    全部
+                  </button>
+                  {allCategories.map((cat) => {
+                    const cfg = CATEGORY_CONFIG[cat]
+                    const isActive = activeCategory === cat
+                    return (
+                      <button
+                        key={cat}
+                        onClick={() => setActiveCategory(isActive ? 'all' : cat)}
+                        className="tag transition-all"
+                        style={
+                          isActive
+                            ? { background: cfg.bg, borderColor: cfg.color, color: cfg.color, cursor: 'pointer' }
+                            : { cursor: 'pointer', background: cfg.bg + '40', borderColor: cfg.border + '40', color: cfg.color + 'cc' }
+                        }
+                      >
+                        {cat}
+                      </button>
+                    )
+                  })}
+                </div>
+
                 {/* 技术栈筛选 + 排序 */}
                 <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
                   <div className="flex flex-wrap items-center gap-2">
@@ -319,7 +424,7 @@ export default function ProjectsClient({ projects, allTechStacks }: ProjectsClie
                 </div>
 
                 {/* 结果统计 + 重置 */}
-                {(searchQuery || activeTech !== 'all' || sortBy !== 'order') && (
+                {(searchQuery || activeTech !== 'all' || activeCategory !== 'all' || sortBy !== 'order') && (
                   <div className="flex items-center justify-between pt-3 border-t border-[var(--color-border-subtle)]">
                     <span className="font-mono text-[10px] text-[var(--color-text-tertiary)]">
                       匹配 {filteredProjects.length} / {projects.length} 个项目
