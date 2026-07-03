@@ -11,7 +11,7 @@ export async function GET() {
           Accept: 'application/vnd.github.v3+json',
           'User-Agent': 'CyberBlog',
         },
-        next: { revalidate: 3600 },
+        cache: 'no-store',
       }
     )
     if (!res.ok) throw new Error('GitHub API error')
