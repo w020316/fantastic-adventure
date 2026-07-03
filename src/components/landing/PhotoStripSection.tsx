@@ -161,6 +161,8 @@ export default function PhotoStripSection() {
   const [bottomLoaded, setBottomLoaded] = useState<Set<number>>(new Set())
   const [lightbox, setLightbox] = useState<{ row: 'top' | 'bottom'; index: number } | null>(null)
   const [reduceMotion, setReduceMotion] = useState(false)
+  // 自动滚动：悬停或灯箱打开时暂停
+  const [paused, setPaused] = useState(false)
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -177,6 +179,42 @@ export default function PhotoStripSection() {
     const delta = direction === 'left' ? -amount * sign : amount * sign
     ref.scrollBy({ left: delta, behavior: reduceMotion ? 'auto' : 'smooth' })
   }, [reduceMotion])
+
+  // 自动滚动：上排正向、下排反向，到末尾循环回开头
+  useEffect(() => {
+    if (reduceMotion || paused || lightbox !== null) return
+    const STEP = 380 // 单张卡片宽度 + gap
+    const INTERVAL = 3000 // 每 3 秒滚动一张
+
+    const timer = setInterval(() => {
+      // 上排：向右滚动，到末尾回到开头
+      const top = topRef.current
+      if (top) {
+        const maxScroll = top.scrollWidth - top.clientWidth
+        if (maxScroll <= 0) return
+        const next = top.scrollLeft + STEP
+        if (next >= maxScroll) {
+          top.scrollTo({ left: 0, behavior: 'smooth' })
+        } else {
+          top.scrollBy({ left: STEP, behavior: 'smooth' })
+        }
+      }
+      // 下排：向左滚动（反向），到开头回到末尾
+      const bottom = bottomRef.current
+      if (bottom) {
+        const maxScroll = bottom.scrollWidth - bottom.clientWidth
+        if (maxScroll <= 0) return
+        const next = bottom.scrollLeft - STEP
+        if (bottom.scrollLeft <= 0) {
+          bottom.scrollTo({ left: maxScroll, behavior: 'smooth' })
+        } else {
+          bottom.scrollBy({ left: -STEP, behavior: 'smooth' })
+        }
+      }
+    }, INTERVAL)
+
+    return () => clearInterval(timer)
+  }, [reduceMotion, paused, lightbox])
 
   // 灯箱键盘导航
   const allPhotos = [
@@ -214,7 +252,11 @@ export default function PhotoStripSection() {
     : null
 
   return (
-    <section className="relative py-24 sm:py-32 px-4 overflow-hidden">
+    <section
+      className="relative py-24 sm:py-32 px-4 overflow-hidden"
+      onMouseEnter={() => setPaused(true)}
+      onMouseLeave={() => setPaused(false)}
+    >
       {/* 背景网格 */}
       <div
         className="absolute inset-0 opacity-[0.03] pointer-events-none"
@@ -234,7 +276,7 @@ export default function PhotoStripSection() {
             影像 <span className="text-[#ccff00]">长廊</span>
           </h2>
           <p className="text-sm text-[#888] mb-12 max-w-lg">
-            上下两排照片长廊，点击左右按钮转动浏览，点击图片可放大查看。
+            上下两排照片自动滚动浏览，鼠标悬停暂停，点击左右按钮手动转动，点击图片可放大查看。
           </p>
         </SectionReveal>
 

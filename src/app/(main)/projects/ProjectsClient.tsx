@@ -150,7 +150,7 @@ function ProjectCard({ project, index }: { project: Project; index: number }) {
         {project.demoUrl && (
           <a href={project.demoUrl} target="_blank" rel="noopener noreferrer" className="btn-outline">
             <ExternalLinkIcon className="w-4 h-4" />
-            演示
+            在线体验
           </a>
         )}
       </div>

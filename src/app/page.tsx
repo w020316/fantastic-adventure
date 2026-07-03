@@ -8,7 +8,6 @@ import ArticlesSection from '@/components/landing/ArticlesSection'
 import ContactSection from '@/components/landing/ContactSection'
 import SpotlightCursor from '@/components/landing/SpotlightCursor'
 import GitHubReposSection from '@/components/landing/GitHubReposSection'
-import GallerySection from '@/components/landing/GallerySection'
 import PhotoStripSection from '@/components/landing/PhotoStripSection'
 import { prisma } from '@/lib/prisma'
 
@@ -99,7 +98,6 @@ export default async function HomePage() {
         <ProjectsSection projects={dbProjects} />
         <GitHubReposSection />
         <ArticlesSection articles={dbArticles} />
-        <GallerySection />
         <PhotoStripSection />
         <ContactSection />
       </main>
