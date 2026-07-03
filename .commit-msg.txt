@@ -1,6 +1,0 @@
-feat(projects): 优化项目展示排序与照片长廊自动滚动
-
-- 项目排序调整为简历展示顺序：教材ING(0) > CyberBlog(1) > 心语日记(2) > NeuralDash(3) > PixelForge(4)
-- 教材ING演示按钮文案改为"在线体验"
-- 删除首页影像瞬间 GallerySection
-- PhotoStripSection 添加自动滚动：3秒/张，上下反向，悬停暂停
