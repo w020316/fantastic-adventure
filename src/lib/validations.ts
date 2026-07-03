@@ -38,12 +38,23 @@ export const contactSchema = z.object({
   website: z.string().max(0).optional().or(z.literal('')),
 })
 
+export const projectMetricSchema = z.object({
+  label: z.string().optional(),
+  value: z.union([z.string(), z.number()]).optional(),
+  suffix: z.string().optional(),
+  display: z.string().optional(),
+})
+
 export const projectSchema = z.object({
   title: z.string().min(1).max(100),
+  subtitle: z.string().max(200).optional().or(z.literal('')),
   description: z.string().min(1),
+  impact: z.string().optional().or(z.literal('')),
+  metrics: z.array(projectMetricSchema).optional(),
   coverImage: z.string().url().optional().or(z.literal('')),
   demoUrl: z.string().url().optional().or(z.literal('')),
   repoUrl: z.string().url().optional().or(z.literal('')),
+  caseStudyUrl: z.string().url().optional().or(z.literal('')),
   techStack: z.array(z.string()),
   featured: z.boolean().optional(),
   order: z.number().int().min(0).optional(),

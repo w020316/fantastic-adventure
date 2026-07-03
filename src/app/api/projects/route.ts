@@ -30,10 +30,14 @@ export async function POST(request: NextRequest) {
     const project = await prisma.project.create({
       data: {
         title: validated.title,
+        subtitle: validated.subtitle || null,
         description: validated.description,
+        impact: validated.impact || null,
+        metrics: validated.metrics ?? null,
         coverImage: validated.coverImage || null,
         demoUrl: validated.demoUrl || null,
         repoUrl: validated.repoUrl || null,
+        caseStudyUrl: validated.caseStudyUrl || null,
         techStack: validated.techStack,
         featured: validated.featured ?? false,
         order: validated.order ?? 0,

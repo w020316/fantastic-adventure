@@ -134,11 +134,125 @@ async function main() {
       views: 145,
       publishedAt: new Date('2026-04-28'),
     },
+    {
+      title: '我的技术栈与专业能力全览',
+      slug: 'my-tech-stack-and-skills',
+      excerpt: '系统梳理我在前端、后端、AI应用、工程化部署等方向的技术栈与核心能力，以及项目实战中积累的面试加分项。',
+      content: `# 我的技术栈与专业能力全览
+
+> 本文系统梳理我在多个项目实战中沉淀的技术栈与核心能力，作为面试准备与自我复盘。
+
+## 一、前端工程
+
+### 核心技术栈
+
+- **React 19 / Next.js 16**：App Router、Server Components、Streaming SSR、Server Actions
+- **Vue 3.5**：Composition API、\`<script setup>\`、Pinia 状态管理
+- **TypeScript 5.7**：泛型、类型推导、Zod 运行时校验
+- **Tailwind CSS 4**：原子化 CSS、响应式设计、暗色模式
+- **Vite 6**：极速 HMR、构建优化
+
+### 专业能力
+
+1. **性能优化**：Lighthouse 90+ 分，CLS/LCP/FID 全绿
+2. **动效开发**：Framer Motion、CSS 关键帧、\`prefers-reduced-motion\` 适配
+3. **可访问性**：ARIA 标签、键盘导航、焦点管理
+4. **响应式设计**：移动优先、\`(hover: none)\` 媒体查询、触屏适配
+
+## 二、后端架构
+
+### 核心技术栈
+
+- **Node.js**：Express/Koa 原生中间件、Next.js API Routes
+- **Vercel Serverless Functions**：模块化拆分、冷启动优化
+- **PostgreSQL (Neon)**：Serverless Postgres、连接池管理
+- **Prisma ORM 6**：Schema 设计、关系映射、迁移管理、索引优化
+- **JWT 认证**：bcryptjs 密码哈希、Token 刷新机制
+
+### 专业能力
+
+1. **API 设计**：RESTful 规范、Zod 参数校验、统一错误处理
+2. **数据建模**：13+ 数据模型设计、多对多关系、级联删除
+3. **安全防护**：\`requireAdmin\` 守卫、限流、输入消毒、蜜罐字段
+4. **SIGTERM/SIGINT 信号处理**：优雅关闭数据库连接池
+
+## 三、AI 应用
+
+### 核心技术栈
+
+- **LLM 集成**：DeepSeek API、Agnes AI、流式 SSE 推送
+- **RAG 系统**：ChromaDB 向量存储、BGE 嵌入模型
+- **多智能体协作**：情绪感知器、记忆管家、日记生成器、对话精灵
+
+### 专业能力
+
+1. **Prompt 工程**：结构化提示词、Few-shot 学习
+2. **向量检索**：语义相似度匹配、上下文窗口管理
+3. **实时交互**：SSE 进度推送、流式渲染
+
+## 四、工程化与部署
+
+### 核心技术栈
+
+- **CI/CD**：GitHub Actions、自动化测试与部署
+- **容器化**：Docker、Fly.io 部署（香港/东京节点）
+- **监控告警**：Vercel Analytics、Fly.io 日志
+
+### 专业能力
+
+1. **多平台部署**：Vercel、Fly.io、GitHub Pages、Render
+2. **Monorepo 管理**：shared 模块复用、\`vercel.json\` rootDirectory 配置
+3. **国内访问优化**：免费香港节点、X-Real-IP 伪装解决海外API限制
+4. **Windows 工程问题**：\`git worktree\` 创建干净构建上下文
+
+## 五、面试加分项
+
+### 1. 完整的全栈项目落地
+
+- **教材ING平台**：Vue 3 + Vercel Serverless + Neon PostgreSQL，13个数据模型，11个API模块，已迭代至 v12.0
+- **个人作品集**：Next.js 16 + Prisma + Fly.io，含 CMS 后台、博客、项目管理
+- **YOLO 食品安全检测**：Python + OpenCV + PyTorch，从模型训练到 Web 部署全流程
+
+### 2. 工程化深度实践
+
+- 经历 41 次迭代提交的情侣日记应用（CI/CD 全自动化）
+- 解决海外服务器网易云 API 中文编码问题（X-Real-IP 方案）
+- 处理 Windows 文件系统权限导致的 Fly.io 构建失败（GitHub Actions Linux runner）
+
+### 3. 技术广度与深度
+
+- **前端**：React + Vue 双栈，精通 TypeScript 类型系统
+- **后端**：Node.js + Serverless，精通 Prisma 数据建模
+- **AI**：LLM + RAG + 多智能体，从 Prompt 到向量检索
+- **运维**：多平台部署、CI/CD、监控告警
+
+### 4. 设计审美与产品思维
+
+- 赛博朋克设计系统：霓虹色、故障效果、Orbitron 字体
+- 移动端适配：\`(hover: none)\` 媒体查询、触屏交互优化
+- 无障碍设计：\`prefers-reduced-motion\`、ARIA 标签、键盘导航
+
+## 六、持续学习方向
+
+1. **React 19 新特性**：use() Hook、Actions、useOptimistic
+2. **Next.js 16**：Turbopack 稳定版、改进的 App Router
+3. **AI Agent 框架**：多智能体协作模式、工具调用
+4. **边缘计算**：Cloudflare Workers、Vercel Edge Functions
+
+---
+
+> 技术栈是工具，解决问题才是核心。每个项目都是一次从想法到上线的完整旅程。`,
+      categoryId: categories[0].id,
+      status: 'PUBLISHED' as const,
+      likes: 45,
+      views: 289,
+      publishedAt: new Date('2026-07-01'),
+    },
   ]
 
   for (let i = 0; i < articlesData.length; i++) {
     const data = articlesData[i]
-    const tagIndices = i === 0 ? [0, 1, 2] : i === 1 ? [6, 7] : i === 3 ? [1, 2] : i === 4 ? [3] : i === 6 ? [4, 9] : i === 7 ? [8, 7] : []
+    const tagIndices = i === 0 ? [0, 1, 2] : i === 1 ? [6, 7] : i === 3 ? [1, 2] : i === 4 ? [3] : i === 6 ? [4, 9] : i === 7 ? [8, 7] : i === 8 ? [0, 1, 2, 3] : []
     await prisma.article.upsert({
       where: { slug: data.slug },
       update: {},
@@ -205,12 +319,37 @@ async function main() {
       featured: true,
       order: 2,
     },
+    {
+      title: '教材ING智能教材查询与管理平台',
+      subtitle: 'textbook-ing · Vue 3 全栈校园信息服务平台',
+      description: '面向高校师生的校园信息服务平台，核心解决教材信息查询困难、教学日历不透明、校园资讯分散三大痛点。提供教材多维度查询、校历教学周查看、新闻资讯浏览等功能，配套用户注册登录、积分系统、消息通知等完整用户体验。含独立管理后台。',
+      impact: '将分散的校园信息整合为统一平台，涵盖教材查询、校历、新闻、用户系统、积分、消息通知六大模块，从产品设计到上线部署的完整全栈实践',
+      metrics: [
+        { label: '版本', value: 12, suffix: '.0' },
+        { label: '数据模型', value: 13, suffix: '+' },
+        { label: 'API模块', value: 11, suffix: '+' },
+      ],
+      demoUrl: 'https://textbook-ing.vercel.app/',
+      repoUrl: 'https://github.com/w020316/Textbook-ING-Smart-Textbook-Query-and-Management-Platform',
+      caseStudyUrl: null,
+      techStack: ['Vue 3.5', 'TypeScript', 'Vite 6', 'Pinia', 'TailwindCSS', 'Vercel Serverless', 'Prisma', 'Neon PostgreSQL', 'JWT', 'Zod'],
+      featured: true,
+      order: 3,
+    },
   ]
+  // 为每个项目生成 URL 友好的英文 id（中文标题用拼音/英文别名映射）
+  const projectIdMap: Record<string, string> = {
+    '个人数字品牌作品集': 'portfolio-site',
+    'YOLO 食品安全检测系统': 'yolo-food-safety',
+    '情侣日记': 'couple-diary',
+    '教材ING智能教材查询与管理平台': 'textbook-ing',
+  }
   for (const p of projectsData) {
+    const id = projectIdMap[p.title] || p.title.toLowerCase()
     await prisma.project.upsert({
-      where: { id: p.title.toLowerCase() },
+      where: { id },
       update: {},
-      create: { id: p.title.toLowerCase(), ...p },
+      create: { id, ...p },
     })
   }
   console.log('✅ 项目:', projectsData.length)
