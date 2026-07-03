@@ -10,6 +10,7 @@ interface Repo {
   description: string
   htmlUrl: string
   homepage: string | null
+  hasPages: boolean
   language: string
   stargazersCount: number
   forksCount: number
@@ -31,6 +32,9 @@ const languageColors: Record<string, string> = {
   Other: '#888888',
 }
 
+// GitHub 用户名（用于推断 Pages URL）
+const GITHUB_USERNAME = 'w020316'
+
 // 将可能缺协议的 homepage 补全为完整 URL
 function normalizeUrl(url: string | null): string {
   if (!url) return '#'
@@ -38,6 +42,19 @@ function normalizeUrl(url: string | null): string {
   if (!trimmed) return '#'
   if (/^https?:\/\//i.test(trimmed)) return trimmed
   return `https://${trimmed}`
+}
+
+// 推断仓库的在线体验 URL：优先 homepage，其次 GitHub Pages
+function resolveDemoUrl(repo: Repo): { url: string; hasDemo: boolean } {
+  // 1. 优先使用仓库设置的 homepage
+  if (repo.homepage && repo.homepage.trim()) {
+    return { url: normalizeUrl(repo.homepage), hasDemo: true }
+  }
+  // 2. 启用了 GitHub Pages 的仓库，推断 URL
+  if (repo.hasPages) {
+    return { url: `https://${GITHUB_USERNAME}.github.io/${repo.name}/`, hasDemo: true }
+  }
+  return { url: '#', hasDemo: false }
 }
 
 export default function GitHubReposSection() {
@@ -90,8 +107,7 @@ export default function GitHubReposSection() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {repos.map((repo, i) => {
-            const demoUrl = normalizeUrl(repo.homepage)
-            const hasDemo = Boolean(repo.homepage && repo.homepage.trim())
+            const { url: demoUrl, hasDemo } = resolveDemoUrl(repo)
             return (
               <SectionReveal key={repo.id} delay={i * 60}>
                 <div className="cyber-card p-5 h-full flex flex-col hover:border-[#ccff00]/50 transition-all duration-300 group">

@@ -25,6 +25,7 @@ export async function GET() {
         description: repo.description || '',
         htmlUrl: repo.html_url,
         homepage: repo.homepage,
+        hasPages: Boolean(repo.has_pages),
         language: repo.language || 'Other',
         stargazersCount: repo.stargazers_count,
         forksCount: repo.forks_count,
