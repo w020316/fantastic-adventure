@@ -6,13 +6,24 @@ import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import { projectSchema } from '@/lib/validations'
 
+interface MetricRow {
+  label: string
+  value: string
+  suffix: string
+  display: string
+}
+
 interface ProjectData {
   id: string
   title: string
+  subtitle?: string | null
   description: string
+  impact?: string | null
+  metrics?: { label?: string; value?: string | number; suffix?: string; display?: string }[] | null
   coverImage: string | null
   demoUrl: string | null
   repoUrl: string | null
+  caseStudyUrl?: string | null
   techStack: string[]
   featured: boolean
   order: number
@@ -25,11 +36,15 @@ export default function AdminProjectEditPage() {
   const projectId = params.id as string
 
   const [title, setTitle] = useState('')
+  const [subtitle, setSubtitle] = useState('')
   const [description, setDescription] = useState('')
+  const [impact, setImpact] = useState('')
   const [coverImage, setCoverImage] = useState('')
   const [demoUrl, setDemoUrl] = useState('')
   const [repoUrl, setRepoUrl] = useState('')
+  const [caseStudyUrl, setCaseStudyUrl] = useState('')
   const [techStack, setTechStack] = useState('')
+  const [metricsRows, setMetricsRows] = useState<MetricRow[]>([])
   const [featured, setFeatured] = useState(false)
   const [order, setOrder] = useState(0)
   const [submitting, setSubmitting] = useState(false)
@@ -45,13 +60,27 @@ export default function AdminProjectEditPage() {
           const data = await res.json()
           const project: ProjectData = data.project || data
           setTitle(project.title)
+          setSubtitle(project.subtitle || '')
           setDescription(project.description)
+          setImpact(project.impact || '')
           setCoverImage(project.coverImage || '')
           setDemoUrl(project.demoUrl || '')
           setRepoUrl(project.repoUrl || '')
+          setCaseStudyUrl(project.caseStudyUrl || '')
           setTechStack(project.techStack?.join(', ') || '')
           setFeatured(project.featured)
           setOrder(project.order ?? 0)
+          // 填充 metrics 行
+          if (Array.isArray(project.metrics) && project.metrics.length > 0) {
+            setMetricsRows(
+              project.metrics.map((m) => ({
+                label: m.label || '',
+                value: typeof m.value === 'number' ? String(m.value) : m.value || '',
+                suffix: m.suffix || '',
+                display: m.display || '',
+              }))
+            )
+          }
         } else {
           setError('项目未找到')
         }
@@ -64,16 +93,42 @@ export default function AdminProjectEditPage() {
     fetchProject()
   }, [sessionStatus, projectId])
 
+  function addMetricRow() {
+    setMetricsRows((prev) => [...prev, { label: '', value: '', suffix: '', display: '' }])
+  }
+
+  function removeMetricRow(idx: number) {
+    setMetricsRows((prev) => prev.filter((_, i) => i !== idx))
+  }
+
+  function updateMetricRow(idx: number, field: keyof MetricRow, val: string) {
+    setMetricsRows((prev) => prev.map((row, i) => (i === idx ? { ...row, [field]: val } : row)))
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setError('')
 
+    // 构造 metrics：过滤掉完全空的行
+    const cleanedMetrics = metricsRows
+      .filter((r) => r.label || r.value || r.suffix || r.display)
+      .map((r) => ({
+        label: r.label || undefined,
+        value: r.value === '' ? undefined : isNaN(Number(r.value)) ? r.value : Number(r.value),
+        suffix: r.suffix || undefined,
+        display: r.display || undefined,
+      }))
+
     const payload = {
       title,
+      subtitle: subtitle || undefined,
       description,
+      impact: impact || undefined,
+      metrics: cleanedMetrics.length > 0 ? cleanedMetrics : undefined,
       coverImage: coverImage || undefined,
       demoUrl: demoUrl || undefined,
       repoUrl: repoUrl || undefined,
+      caseStudyUrl: caseStudyUrl || undefined,
       techStack: techStack
         .split(',')
         .map((s) => s.trim())
@@ -161,6 +216,18 @@ export default function AdminProjectEditPage() {
             </div>
 
             <div>
+              <label className="block font-mono text-xs text-cyber-text-dim mb-1">副标题</label>
+              <input
+                type="text"
+                value={subtitle}
+                onChange={(e) => setSubtitle(e.target.value)}
+                className="cyber-input text-sm"
+                style={{ paddingLeft: '1rem' }}
+                placeholder="如：project-id · 技术栈定位"
+              />
+            </div>
+
+            <div>
               <label className="block font-mono text-xs text-cyber-text-dim mb-1">描述 *</label>
               <textarea
                 value={description}
@@ -171,6 +238,80 @@ export default function AdminProjectEditPage() {
                 placeholder="项目描述"
                 required
               />
+            </div>
+
+            <div>
+              <label className="block font-mono text-xs text-cyber-text-dim mb-1">项目影响 / Impact</label>
+              <textarea
+                value={impact}
+                onChange={(e) => setImpact(e.target.value)}
+                className="cyber-input text-sm resize-none"
+                style={{ paddingLeft: '1rem' }}
+                rows={2}
+                placeholder="一句话总结项目的价值与影响"
+              />
+            </div>
+
+            {/* 量化指标 metrics 动态行 */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block font-mono text-xs text-cyber-text-dim">量化指标 / Metrics</label>
+                <button
+                  type="button"
+                  onClick={addMetricRow}
+                  className="cyber-button py-1 px-3 text-[10px]"
+                >
+                  + 添加指标
+                </button>
+              </div>
+              {metricsRows.length === 0 && (
+                <p className="font-mono text-[10px] text-cyber-text-dim/60">暂无指标，点击"添加指标"录入数据</p>
+              )}
+              <div className="space-y-2">
+                {metricsRows.map((row, idx) => (
+                  <div key={idx} className="grid grid-cols-2 sm:grid-cols-5 gap-2 items-center">
+                    <input
+                      type="text"
+                      value={row.label}
+                      onChange={(e) => updateMetricRow(idx, 'label', e.target.value)}
+                      className="cyber-input text-xs"
+                      style={{ paddingLeft: '0.5rem' }}
+                      placeholder="标签"
+                    />
+                    <input
+                      type="text"
+                      value={row.value}
+                      onChange={(e) => updateMetricRow(idx, 'value', e.target.value)}
+                      className="cyber-input text-xs"
+                      style={{ paddingLeft: '0.5rem' }}
+                      placeholder="数值"
+                    />
+                    <input
+                      type="text"
+                      value={row.suffix}
+                      onChange={(e) => updateMetricRow(idx, 'suffix', e.target.value)}
+                      className="cyber-input text-xs"
+                      style={{ paddingLeft: '0.5rem' }}
+                      placeholder="后缀(如 %)"
+                    />
+                    <input
+                      type="text"
+                      value={row.display}
+                      onChange={(e) => updateMetricRow(idx, 'display', e.target.value)}
+                      className="cyber-input text-xs"
+                      style={{ paddingLeft: '0.5rem' }}
+                      placeholder="显示文本(可选)"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeMetricRow(idx)}
+                      className="font-mono text-[10px] text-cyber-pink hover:text-cyber-pink/80 transition-colors"
+                    >
+                      删除
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div>
@@ -208,6 +349,18 @@ export default function AdminProjectEditPage() {
                   placeholder="https://github.com/..."
                 />
               </div>
+            </div>
+
+            <div>
+              <label className="block font-mono text-xs text-cyber-text-dim mb-1">案例分析链接</label>
+              <input
+                type="text"
+                value={caseStudyUrl}
+                onChange={(e) => setCaseStudyUrl(e.target.value)}
+                className="cyber-input text-sm"
+                style={{ paddingLeft: '1rem' }}
+                placeholder="https://example.com/case-study"
+              />
             </div>
 
             <div>

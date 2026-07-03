@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { requireAdmin } from '@/lib/auth'
+import { requireAdmin } from '@/lib/auth-guard'
 import { promises as fs } from 'fs'
 import path from 'path'
 

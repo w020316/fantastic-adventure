@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/app/api/auth/[...nextauth]/route'
 import { projectSchema } from '@/lib/validations'
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
         subtitle: validated.subtitle || null,
         description: validated.description,
         impact: validated.impact || null,
-        metrics: validated.metrics ?? null,
+        metrics: validated.metrics ? (JSON.parse(JSON.stringify(validated.metrics)) as Prisma.InputJsonValue) : Prisma.JsonNull,
         coverImage: validated.coverImage || null,
         demoUrl: validated.demoUrl || null,
         repoUrl: validated.repoUrl || null,

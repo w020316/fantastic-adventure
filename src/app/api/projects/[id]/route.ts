@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { Prisma } from '@prisma/client'
 import { projectSchema } from '@/lib/validations'
 import { requireAdmin } from '@/lib/auth-guard'
 
@@ -63,7 +64,9 @@ export async function PATCH(
         ...(validated.subtitle !== undefined && { subtitle: validated.subtitle || null }),
         ...(validated.description !== undefined && { description: validated.description }),
         ...(validated.impact !== undefined && { impact: validated.impact || null }),
-        ...(validated.metrics !== undefined && { metrics: validated.metrics ?? null }),
+        ...(validated.metrics !== undefined && {
+          metrics: validated.metrics ? (JSON.parse(JSON.stringify(validated.metrics)) as Prisma.InputJsonValue) : Prisma.JsonNull,
+        }),
         ...(validated.coverImage !== undefined && { coverImage: validated.coverImage || null }),
         ...(validated.demoUrl !== undefined && { demoUrl: validated.demoUrl || null }),
         ...(validated.repoUrl !== undefined && { repoUrl: validated.repoUrl || null }),

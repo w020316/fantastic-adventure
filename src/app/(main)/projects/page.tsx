@@ -11,17 +11,22 @@ type ProjectMetric = {
   display?: string
 }
 
-type ProjectWithRelations = Awaited<ReturnType<typeof prisma.project.findMany>>[number]
-
 export default async function ProjectsPage() {
   const projects = await prisma.project.findMany({
     orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
   })
+
+  // 序列化为客户端兼容类型（Date → string）
+  const serializedProjects = projects.map((p) => ({
+    ...p,
+    metrics: (p.metrics ?? null) as ProjectMetric[] | null,
+    createdAt: p.createdAt.toISOString(),
+  }))
 
   // 收集所有技术栈标签（用于筛选）
   const allTechStacks = Array.from(
     new Set(projects.flatMap((p) => p.techStack))
   ).sort()
 
-  return <ProjectsClient projects={projects as ProjectWithRelations[]} allTechStacks={allTechStacks} />
+  return <ProjectsClient projects={serializedProjects} allTechStacks={allTechStacks} />
 }
