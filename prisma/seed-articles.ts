@@ -1120,6 +1120,1269 @@ async function generateDiaryResponse(
       publishedAt: new Date('2026-05-05'),
       tagSlugs: ['ai', 'llm', 'rag', 'typescript'],
     },
+
+    // ===== 新增文章 =====
+    {
+      title: 'TypeScript 高级类型体操：从入门到实战',
+      slug: 'typescript-advanced-type-gymnastics',
+      excerpt: '深入理解 TypeScript 条件类型、映射类型、模板字面量类型等高级特性，通过实际案例掌握类型编程技巧。',
+      content: `# TypeScript 高级类型体操
+
+## 条件类型
+
+条件类型让我们根据条件选择不同的类型：
+
+\`\`\`typescript
+type IsString<T> = T extends string ? true : false
+
+type A = IsString<string>  // true
+type B = IsString<number>  // false
+\`\`\`
+
+### 分布式条件类型
+
+\`\`\`typescript
+type ToArray<T> = T extends any ? T[] : never
+
+type Result = ToArray<string | number>
+// Result: string[] | number[]
+\`\`\`
+
+## 映射类型
+
+\`\`\`typescript
+type Readonly<T> = {
+  readonly [P in keyof T]: T[P]
+}
+
+type Partial<T> = {
+  [P in keyof T]?: T[P]
+}
+
+// 自定义：将所有属性变为 required
+type Required<T> = {
+  [P in keyof T]-?: T[P]
+}
+\`\`\`
+
+## 模板字面量类型
+
+\`\`\`typescript
+type EventName = \`on\${Capitalize<string>}\`
+// "onClick" | "onFocus" | ...
+
+type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
+type APIRoute = \`/api/\${string}\`
+type Endpoint = \`\${HTTPMethod} \${APIRoute}\`
+// "GET /api/users" | "POST /api/articles" | ...
+\`\`\`
+
+## infer 关键字
+
+\`\`\`typescript
+// 提取函数返回类型
+type ReturnType<T> = T extends (...args: any[]) => infer R ? R : never
+
+// 提取 Promise 内部类型
+type UnwrapPromise<T> = T extends Promise<infer U> ? U : T
+
+// 提取数组元素类型
+type ElementOf<T> = T extends (infer E)[] ? E : never
+\`\`\`
+
+## 实战：类型安全的 EventEmitter
+
+\`\`\`typescript
+type EventMap = Record<string, any>
+
+interface TypedEmitter<T extends EventMap> {
+  on<K extends keyof T>(event: K, listener: (data: T[K]) => void): void
+  emit<K extends keyof T>(event: K, data: T[K]): void
+}
+
+// 使用
+interface AppEvents {
+  'user:login': { userId: string; name: string }
+  'article:publish': { articleId: string; title: string }
+}
+
+const emitter: TypedEmitter<AppEvents> = ...
+emitter.on('user:login', (data) => {
+  console.log(data.userId) // 类型安全!
+})
+\`\`\`
+
+> 类型体操不是炫技，而是让运行时错误在编译期被发现。`,
+      categoryId: techCategory.id,
+      status: 'PUBLISHED' as const,
+      likes: 36,
+      views: 198,
+      publishedAt: new Date('2026-06-25'),
+      tagSlugs: ['typescript', 'react'],
+    },
+    {
+      title: 'Next.js 15 App Router 深度解析',
+      slug: 'nextjs-15-app-router-deep-dive',
+      excerpt: '全面解析 Next.js 15 App Router 的 Server Components、Streaming SSR、并行路由等核心概念与最佳实践。',
+      content: `# Next.js 15 App Router 深度解析
+
+## Server Components vs Client Components
+
+\`\`\`typescript
+// Server Component（默认）
+async function ArticleList() {
+  const articles = await prisma.article.findMany()
+  return <ul>{articles.map(a => <li key={a.id}>{a.title}</li>)}</ul>
+}
+
+// Client Component
+'use client'
+function LikeButton({ articleId }: { articleId: string }) {
+  const [liked, setLiked] = useState(false)
+  return <button onClick={() => setLiked(true)}>Like</button>
+}
+\`\`\`
+
+## 并行数据获取
+
+\`\`\`typescript
+async function ArticlePage({ slug }: { slug: string }) {
+  // 并行获取文章和评论
+  const [article, comments] = await Promise.all([
+    fetchArticle(slug),
+    fetchComments(slug),
+  ])
+
+  return (
+    <>
+      <ArticleContent article={article} />
+      <CommentList comments={comments} />
+    </>
+  )
+}
+\`\`\`
+
+## Streaming SSR
+
+\`\`\`typescript
+import { Suspense } from 'react'
+
+function ArticlePage() {
+  return (
+    <div>
+      <ArticleHeader />
+      <Suspense fallback={<Skeleton />}>
+        <ArticleContent />
+      </Suspense>
+      <Suspense fallback={<CommentSkeleton />}>
+        <CommentSection />
+      </Suspense>
+    </div>
+  )
+}
+\`\`\`
+
+## 路由组与布局
+
+\`\`\`
+app/
+├── (main)/           # 路由组（不影响 URL）
+│   ├── layout.tsx    # 共享布局
+│   ├── articles/
+│   ├── projects/
+│   └── about/
+├── admin/            # 管理后台
+│   └── layout.tsx    # 独立布局
+└── api/              # API 路由
+\`\`\`
+
+## 性能优化技巧
+
+1. **减少 Client Components**：只在需要交互时使用 \`'use client'\`
+2. **使用 \`loading.tsx\`**：自动为路由创建加载状态
+3. **利用 \`generateMetadata\`**：服务端生成 SEO 元数据
+4. **图片优化**：使用 \`next/image\` 自动优化图片
+
+> App Router 让服务端渲染回归，配合 React 19 的新特性，开发体验更上一层楼。`,
+      categoryId: techCategory.id,
+      status: 'PUBLISHED' as const,
+      likes: 40,
+      views: 234,
+      publishedAt: new Date('2026-06-22'),
+      tagSlugs: ['nextjs', 'react', 'typescript'],
+    },
+    {
+      title: 'Spring Boot 3 入门：构建 RESTful API',
+      slug: 'spring-boot-3-restful-api',
+      excerpt: '从零开始使用 Spring Boot 3 构建 RESTful API，涵盖项目创建、数据模型、CRUD 接口、异常处理及 Swagger 文档生成。',
+      content: `# Spring Boot 3 入门：构建 RESTful API
+
+## 项目初始化
+
+使用 Spring Initializr 创建项目，选择依赖：
+- Spring Web
+- Spring Data JPA
+- PostgreSQL Driver
+- Lombok
+
+## 数据模型
+
+\`\`\`java
+@Entity
+@Table(name = "articles")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class Article {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false)
+    private String title;
+
+    @Column(columnDefinition = "TEXT")
+    private String content;
+
+    @Enumerated(EnumType.STRING)
+    private Status status = Status.DRAFT;
+
+    @ManyToOne
+    @JoinColumn(name = "author_id")
+    private User author;
+
+    @ManyToMany
+    @JoinTable(
+        name = "article_tags",
+        joinColumns = @JoinColumn(name = "article_id"),
+        inverseJoinColumns = @JoinColumn(name = "tag_id")
+    )
+    private Set<Tag> tags = new HashSet<>();
+
+    private int likes = 0;
+    private int views = 0;
+    private LocalDateTime publishedAt;
+}
+\`\`\`
+
+## Repository 层
+
+\`\`\`java
+@Repository
+public interface ArticleRepository extends JpaRepository<Article, Long> {
+    List<Article> findByStatusOrderByPublishedAtDesc(Status status);
+
+    @Query("SELECT a FROM Article a WHERE a.title LIKE %:keyword%")
+    List<Article> searchByTitle(@Param("keyword") String keyword);
+
+    Page<Article> findByStatus(Status status, Pageable pageable);
+}
+\`\`\`
+
+## Service 层
+
+\`\`\`java
+@Service
+@RequiredArgsConstructor
+public class ArticleService {
+    private final ArticleRepository articleRepository;
+
+    public Page<ArticleDTO> getArticles(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("publishedAt").descending());
+        return articleRepository
+            .findByStatus(Status.PUBLISHED, pageable)
+            .map(this::toDTO);
+    }
+
+    public ArticleDTO getArticle(Long id) {
+        Article article = articleRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Article not found"));
+        article.setViews(article.getViews() + 1);
+        articleRepository.save(article);
+        return toDTO(article);
+    }
+
+    @Transactional
+    public ArticleDTO createArticle(CreateArticleRequest request) {
+        Article article = new Article();
+        article.setTitle(request.getTitle());
+        article.setContent(request.getContent());
+        article.setAuthor(getCurrentUser());
+        return toDTO(articleRepository.save(article));
+    }
+}
+\`\`\`
+
+## Controller 层
+
+\`\`\`java
+@RestController
+@RequestMapping("/api/articles")
+@RequiredArgsConstructor
+public class ArticleController {
+    private final ArticleService articleService;
+
+    @GetMapping
+    public ResponseEntity<Page<ArticleDTO>> list(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(articleService.getArticles(page, size));
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ArticleDTO> detail(@PathVariable Long id) {
+        return ResponseEntity.ok(articleService.getArticle(id));
+    }
+
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ArticleDTO> create(@Valid @RequestBody CreateArticleRequest request) {
+        return ResponseEntity.status(201).body(articleService.createArticle(request));
+    }
+}
+\`\`\`
+
+## 全局异常处理
+
+\`\`\`java
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(404)
+            .body(new ErrorResponse(404, ex.getMessage()));
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getFieldErrors()
+            .forEach(e -> errors.put(e.getField(), e.getDefaultMessage()));
+        return ResponseEntity.status(400)
+            .body(new ErrorResponse(400, "Validation failed", errors));
+    }
+}
+\`\`\`
+
+> Spring Boot 3 配合 Java 17+ 的新特性，让后端开发更加高效。`,
+      categoryId: techCategory.id,
+      status: 'PUBLISHED' as const,
+      likes: 34,
+      views: 201,
+      publishedAt: new Date('2026-06-18'),
+      tagSlugs: ['java', 'springboot', 'mysql'],
+    },
+    {
+      title: 'Docker 容器化部署实战',
+      slug: 'docker-container-deployment-guide',
+      excerpt: '从 Dockerfile 编写到多容器编排，全面掌握 Docker 在实际项目中的部署方案，包括 Next.js 应用与 PostgreSQL 数据库的容器化。',
+      content: `# Docker 容器化部署实战
+
+## 为什么使用 Docker
+
+- 环境一致性：开发、测试、生产环境完全相同
+- 快速部署：一条命令启动整个应用
+- 资源隔离：容器之间互不影响
+- 易于扩展：配合编排工具实现弹性伸缩
+
+## Dockerfile 编写
+
+### Next.js 应用
+
+\`\`\`dockerfile
+FROM node:20-alpine AS base
+
+# 安装依赖
+FROM base AS deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+RUN npm ci --only=production
+
+# 构建
+FROM base AS builder
+WORKDIR /app
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npm run build
+
+# 运行
+FROM base AS runner
+WORKDIR /app
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+USER nextjs
+
+EXPOSE 3000
+
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+CMD ["node", "server.js"]
+\`\`\`
+
+### Spring Boot 应用
+
+\`\`\`dockerfile
+FROM eclipse-temurin:17-jdk-alpine AS build
+WORKDIR /app
+COPY . .
+RUN ./gradlew bootJar
+
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=build /app/build/libs/*.jar app.jar
+
+EXPOSE 8080
+ENTRYPOINT ["java", "-jar", "app.jar"]
+\`\`\`
+
+## docker-compose 编排
+
+\`\`\`yaml
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgresql://user:pass@db:5432/mydb
+      - NEXTAUTH_SECRET=my-secret
+    depends_on:
+      - db
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: mydb
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+volumes:
+  pgdata:
+\`\`\`
+
+## 常用命令
+
+\`\`\`bash
+# 构建镜像
+docker build -t myapp .
+
+# 运行容器
+docker run -d -p 3000:3000 myapp
+
+# 启动所有服务
+docker-compose up -d
+
+# 查看日志
+docker-compose logs -f app
+
+# 进入容器
+docker exec -it app sh
+
+# 停止并清理
+docker-compose down
+\`\`\`
+
+## 最佳实践
+
+1. **多阶段构建**：减少最终镜像大小
+2. **非 root 用户**：提高安全性
+3. **健康检查**：确保容器正常运行
+4. **环境变量**：不要将敏感信息写入镜像
+5. **.dockerignore**：排除不必要的文件
+
+> Docker 让部署变得可预测和可重复，是现代应用交付的基石。`,
+      categoryId: techCategory.id,
+      status: 'PUBLISHED' as const,
+      likes: 30,
+      views: 176,
+      publishedAt: new Date('2026-06-12'),
+      tagSlugs: ['docker', 'nextjs', 'postgresql'],
+    },
+    {
+      title: 'GitHub Actions CI/CD 自动化部署',
+      slug: 'github-actions-cicd-automation',
+      excerpt: '使用 GitHub Actions 构建完整的 CI/CD 流水线，实现代码提交后自动测试、构建、部署到 Fly.io/Vercel 等平台。',
+      content: `# GitHub Actions CI/CD 自动化部署
+
+## 基本概念
+
+- **Workflow**：自动化流程，定义在 \`.github/workflows/\` 目录
+- **Event**：触发事件，如 push、pull_request
+- **Job**：工作流中的一组步骤
+- **Step**：单个任务，可以是 Action 或命令
+- **Action**：可复用的操作单元
+
+## 基础工作流
+
+\`\`\`yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+\`\`\`
+
+## 部署到 Fly.io
+
+\`\`\`yaml
+name: Deploy to Fly.io
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+
+      - run: flyctl deploy --remote-only
+        env:
+          FLY_API_TOKEN: \${{ secrets.FLY_API_TOKEN }}
+\`\`\`
+
+## 部署到 Vercel
+
+\`\`\`yaml
+name: Deploy to Vercel
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy to Vercel
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: \${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: \${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: \${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+\`\`\`
+
+## 多环境部署
+
+\`\`\`yaml
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main      # 生产环境
+      - staging   # 预发布环境
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: \${{ github.ref_name == 'main' && 'production' || 'staging' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deploy
+        run: |
+          if [ "\${{ github.ref_name }}" = "main" ]; then
+            echo "Deploying to production..."
+          else
+            echo "Deploying to staging..."
+          fi
+\`\`\`
+
+## 安全最佳实践
+
+1. **使用 Secrets**：敏感信息存储在 GitHub Secrets
+2. **最小权限**：GITHUB_TOKEN 只授予必要权限
+3. **固定版本**：使用 SHA 而非 tag 引用第三方 Action
+4. **代码审查**：PR 必须经过审查才能合并
+
+> CI/CD 让每次代码变更都经过自动化验证，大大降低了部署风险。`,
+      categoryId: techCategory.id,
+      status: 'PUBLISHED' as const,
+      likes: 28,
+      views: 156,
+      publishedAt: new Date('2026-06-08'),
+      tagSlugs: ['github-actions', 'docker', 'flyio', 'vercel'],
+    },
+    {
+      title: 'JWT 认证与 NextAuth.js 实战',
+      slug: 'jwt-authentication-nextauth-guide',
+      excerpt: '深入理解 JWT 认证原理，使用 NextAuth.js 实现完整的登录、注册、权限管理功能，包括 Token 刷新与安全防护。',
+      content: `# JWT 认证与 NextAuth.js 实战
+
+## JWT 原理
+
+JWT（JSON Web Token）由三部分组成：
+
+\`\`\`
+Header.Payload.Signature
+
+eyJhbGciOiJIUzI1NiJ9.eyJ1c2VySWQiOiIxMjMifQ.signature
+\`\`\`
+
+### Header
+\`\`\`json
+{
+  "alg": "HS256",
+  "typ": "JWT"
+}
+\`\`\`
+
+### Payload
+\`\`\`json
+{
+  "userId": "123",
+  "role": "ADMIN",
+  "iat": 1700000000,
+  "exp": 1700003600
+}
+\`\`\`
+
+## NextAuth.js 配置
+
+\`\`\`typescript
+// app/api/auth/[...nextauth]/route.ts
+import NextAuth from 'next-auth'
+import CredentialsProvider from 'next-auth/providers/credentials'
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
+
+export const authOptions = {
+  providers: [
+    CredentialsProvider({
+      name: 'Credentials',
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email }
+        })
+
+        if (!user) return null
+
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        )
+
+        if (!isValid) return null
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+        }
+      }
+    })
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.role = user.role
+        token.userId = user.id
+      }
+      return token
+    },
+    async session({ session, token }) {
+      session.user.role = token.role
+      session.user.id = token.userId
+      return session
+    }
+  },
+  pages: {
+    signIn: '/admin/login',
+  },
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+}
+
+const handler = NextAuth(authOptions)
+export { handler as GET, handler as POST }
+\`\`\`
+
+## 权限保护
+
+### 服务端组件
+
+\`\`\`typescript
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+
+async function AdminPage() {
+  const session = await getServerSession(authOptions)
+
+  if (session?.user?.role !== 'ADMIN') {
+    redirect('/admin/login')
+  }
+
+  return <div>Admin Content</div>
+}
+\`\`\`
+
+### API 路由
+
+\`\`\`typescript
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/app/api/auth/[...nextauth]/route'
+
+export async function POST(request: NextRequest) {
+  const session = await getServerSession(authOptions)
+
+  if (!session?.user || (session.user as any).role !== 'ADMIN') {
+    return NextResponse.json({ error: '权限不足' }, { status: 403 })
+  }
+
+  // 处理请求...
+}
+\`\`\`
+
+### 客户端组件
+
+\`\`\`typescript
+'use client'
+import { useSession } from 'next-auth/react'
+
+function AdminPanel() {
+  const { data: session, status } = useSession()
+
+  if (status === 'loading') return <Loading />
+  if (!session) return <LoginPrompt />
+
+  return <div>Welcome, {session.user.name}</div>
+}
+\`\`\`
+
+## 中间件保护
+
+\`\`\`typescript
+// middleware.ts
+import { getToken } from 'next-auth/jwt'
+
+export async function middleware(request: NextRequest) {
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  })
+
+  if (token?.role !== 'ADMIN') {
+    const loginUrl = new URL('/admin/login', request.url)
+    loginUrl.searchParams.set('callbackUrl', request.nextUrl.pathname)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  return NextResponse.next()
+}
+
+export const config = {
+  matcher: ['/admin/:path*'],
+}
+\`\`\`
+
+> 安全的认证系统是应用的基石，NextAuth.js 让认证实现变得简单而灵活。`,
+      categoryId: techCategory.id,
+      status: 'PUBLISHED' as const,
+      likes: 32,
+      views: 187,
+      publishedAt: new Date('2026-06-03'),
+      tagSlugs: ['nextjs', 'jwt', 'typescript', 'nodejs'],
+    },
+    {
+      title: 'Python 机器学习入门：从数据到模型',
+      slug: 'python-machine-learning-introduction',
+      excerpt: '使用 scikit-learn 从零开始构建机器学习模型，涵盖数据预处理、特征工程、模型训练、评估与调优的完整流程。',
+      content: `# Python 机器学习入门
+
+## 环境准备
+
+\`\`\`bash
+pip install numpy pandas scikit-learn matplotlib seaborn
+\`\`\`
+
+## 数据加载与探索
+
+\`\`\`python
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# 加载数据
+df = pd.read_csv('data.csv')
+
+# 数据概览
+print(df.head())
+print(df.describe())
+print(df.info())
+
+# 可视化
+plt.figure(figsize=(10, 6))
+plt.scatter(df['feature1'], df['feature2'], c=df['target'], cmap='viridis')
+plt.colorbar()
+plt.xlabel('Feature 1')
+plt.ylabel('Feature 2')
+plt.title('Data Distribution')
+plt.show()
+\`\`\`
+
+## 数据预处理
+
+\`\`\`python
+from sklearn.preprocessing import StandardScaler, LabelEncoder
+from sklearn.model_selection import train_test_split
+
+# 处理缺失值
+df.fillna(df.median(), inplace=True)
+
+# 编码分类变量
+encoder = LabelEncoder()
+df['category'] = encoder.fit_transform(df['category'])
+
+# 分割训练集和测试集
+X = df.drop('target', axis=1)
+y = df['target']
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.2, random_state=42
+)
+
+# 特征标准化
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+\`\`\`
+
+## 模型训练
+
+\`\`\`python
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+
+# 随机森林
+rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
+rf_model.fit(X_train_scaled, y_train)
+
+# 逻辑回归
+lr_model = LogisticRegression(max_iter=1000)
+lr_model.fit(X_train_scaled, y_train)
+
+# SVM
+svm_model = SVC(kernel='rbf')
+svm_model.fit(X_train_scaled, y_train)
+\`\`\`
+
+## 模型评估
+
+\`\`\`python
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+
+def evaluate_model(model, X_test, y_test, name):
+    y_pred = model.predict(X_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    print(f"\\n{name}:")
+    print(f"Accuracy: {accuracy:.4f}")
+    print(classification_report(y_test, y_pred))
+
+evaluate_model(rf_model, X_test_scaled, y_test, "Random Forest")
+evaluate_model(lr_model, X_test_scaled, y_test, "Logistic Regression")
+evaluate_model(svm_model, X_test_scaled, y_test, "SVM")
+\`\`\`
+
+## 超参数调优
+
+\`\`\`python
+from sklearn.model_selection import GridSearchCV
+
+param_grid = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [None, 10, 20],
+    'min_samples_split': [2, 5, 10],
+}
+
+grid_search = GridSearchCV(
+    RandomForestClassifier(),
+    param_grid,
+    cv=5,
+    scoring='accuracy',
+    n_jobs=-1,
+)
+
+grid_search.fit(X_train_scaled, y_train)
+print(f"Best parameters: {grid_search.best_params_}")
+print(f"Best score: {grid_search.best_score_:.4f}")
+\`\`\`
+
+## 特征重要性
+
+\`\`\`python
+import numpy as np
+
+# 获取特征重要性
+importances = rf_model.feature_importances_
+feature_names = X.columns
+
+# 排序
+indices = np.argsort(importances)[::-1]
+
+plt.figure(figsize=(10, 6))
+plt.title('Feature Importances')
+plt.bar(range(len(importances)), importances[indices])
+plt.xticks(range(len(importances)), [feature_names[i] for i in indices], rotation=45)
+plt.tight_layout()
+plt.show()
+\`\`\`
+
+> 机器学习不是魔法，而是数据驱动的科学方法。理解数据比选择模型更重要。`,
+      categoryId: techCategory.id,
+      status: 'PUBLISHED' as const,
+      likes: 37,
+      views: 213,
+      publishedAt: new Date('2026-05-28'),
+      tagSlugs: ['python', 'ai', 'pytorch'],
+    },
+    {
+      title: 'Redis 缓存实战：提升 API 性能 10 倍',
+      slug: 'redis-caching-performance-optimization',
+      excerpt: '使用 Redis 实现 API 响应缓存、会话管理、排行榜等功能，掌握缓存穿透、雪崩、击穿的解决方案。',
+      content: `# Redis 缓存实战
+
+## 为什么使用 Redis
+
+- **内存存储**：读写速度远超磁盘数据库
+- **丰富数据结构**：String、Hash、List、Set、Sorted Set
+- **过期机制**：自动清理过期数据
+- **发布订阅**：实现实时消息
+
+## 基本使用
+
+\`\`\`typescript
+import Redis from 'ioredis'
+
+const redis = new Redis(process.env.REDIS_URL!)
+
+// 设置缓存
+await redis.set('article:123', JSON.stringify(article), 'EX', 3600)
+
+// 获取缓存
+const cached = await redis.get('article:123')
+if (cached) return JSON.parse(cached)
+
+// 删除缓存
+await redis.del('article:123')
+\`\`\`
+
+## API 缓存中间件
+
+\`\`\`typescript
+async function cacheMiddleware(req: Request, res: Response, next: NextFunction) {
+  const key = \`api:\${req.originalUrl}\`
+
+  const cached = await redis.get(key)
+  if (cached) {
+    return res.json(JSON.parse(cached))
+  }
+
+  // 保存原始 json 方法
+  const originalJson = res.json.bind(res)
+
+  res.json = (body: any) => {
+    redis.set(key, JSON.stringify(body), 'EX', 60)
+    return originalJson(body)
+  }
+
+  next()
+}
+\`\`\`
+
+## 缓存策略
+
+### Cache Aside（旁路缓存）
+
+\`\`\`typescript
+async function getArticle(id: string) {
+  // 1. 先查缓存
+  const cached = await redis.get(\`article:\${id}\`)
+  if (cached) return JSON.parse(cached)
+
+  // 2. 查数据库
+  const article = await prisma.article.findUnique({ where: { id } })
+  if (!article) return null
+
+  // 3. 写入缓存
+  await redis.set(\`article:\${id}\`, JSON.stringify(article), 'EX', 3600)
+
+  return article
+}
+\`\`\`
+
+### Write Through（写穿透）
+
+\`\`\`typescript
+async function updateArticle(id: string, data: UpdateData) {
+  // 同时更新数据库和缓存
+  const [article] = await Promise.all([
+    prisma.article.update({ where: { id }, data }),
+    redis.set(\`article:\${id}\`, JSON.stringify(data), 'EX', 3600),
+  ])
+  return article
+}
+\`\`\`
+
+## 常见问题解决
+
+### 缓存穿透
+
+查询不存在的数据，每次都打到数据库。
+
+\`\`\`typescript
+async function getArticle(id: string) {
+  const cached = await redis.get(\`article:\${id}\`)
+  if (cached === 'NULL') return null  // 缓存空值
+  if (cached) return JSON.parse(cached)
+
+  const article = await prisma.article.findUnique({ where: { id } })
+
+  if (!article) {
+    // 缓存空值，较短过期时间
+    await redis.set(\`article:\${id}\`, 'NULL', 'EX', 60)
+    return null
+  }
+
+  await redis.set(\`article:\${id}\`, JSON.stringify(article), 'EX', 3600)
+  return article
+}
+\`\`\`
+
+### 缓存雪崩
+
+大量缓存同时过期，请求全部打到数据库。
+
+\`\`\`typescript
+// 过期时间加随机值，避免同时过期
+const ttl = 3600 + Math.floor(Math.random() * 300)
+await redis.set(key, value, 'EX', ttl)
+\`\`\`
+
+### 缓存击穿
+
+热点 key 过期瞬间，大量并发请求打到数据库。
+
+\`\`\`typescript
+async function getHotArticle(id: string) {
+  // 使用分布式锁
+  const lock = await redis.set(\`lock:\${id}\`, '1', 'EX', 10, 'NX')
+
+  if (!lock) {
+    // 等待其他线程更新缓存
+    await new Promise(r => setTimeout(r, 100))
+    return getHotArticle(id)
+  }
+
+  try {
+    const article = await prisma.article.findUnique({ where: { id } })
+    await redis.set(\`article:\${id}\`, JSON.stringify(article), 'EX', 3600)
+    return article
+  } finally {
+    await redis.del(\`lock:\${id}\`)
+  }
+}
+\`\`\`
+
+## 排行榜实现
+
+\`\`\`typescript
+// 添加分数
+await redis.zadd('ranking', score, userId)
+
+// 获取 Top 10
+const top10 = await redis.zrevrange('ranking', 0, 9, 'WITHSCORES')
+
+// 获取用户排名
+const rank = await redis.zrevrank('ranking', userId)
+\`\`\`
+
+> Redis 是提升系统性能的利器，但要注意缓存与数据库的一致性。`,
+      categoryId: techCategory.id,
+      status: 'PUBLISHED' as const,
+      likes: 29,
+      views: 167,
+      publishedAt: new Date('2026-05-22'),
+      tagSlugs: ['redis', 'nodejs', 'typescript'],
+    },
+    {
+      title: 'React 性能优化：从理论到实践',
+      slug: 'react-performance-optimization-guide',
+      excerpt: '深入理解 React 渲染机制，掌握 useMemo、useCallback、React.memo、代码分割等性能优化技巧，让应用流畅如丝。',
+      content: `# React 性能优化：从理论到实践
+
+## React 渲染机制
+
+当组件的 state 或 props 变化时，React 会重新渲染该组件及其子组件。理解这一点是优化的基础。
+
+## React.memo
+
+\`\`\`typescript
+// 不使用 memo：父组件每次渲染都会导致子组件重新渲染
+function ExpensiveList({ items }: { items: Item[] }) {
+  return (
+    <ul>
+      {items.map(item => <ExpensiveItem key={item.id} item={item} />)}
+    </ul>
+  )
+}
+
+// 使用 memo：props 不变时跳过渲染
+const ExpensiveItem = React.memo(function ExpensiveItem({ item }: { item: Item }) {
+  return <li>{/* 复杂的渲染逻辑 */}</li>
+})
+\`\`\`
+
+## useMemo
+
+\`\`\`typescript
+function ArticleList({ articles, filter }: Props) {
+  // 不使用 useMemo：每次渲染都重新计算
+  // const filtered = articles.filter(a => a.category === filter)
+
+  // 使用 useMemo：只在依赖变化时重新计算
+  const filtered = useMemo(
+    () => articles.filter(a => a.category === filter),
+    [articles, filter]
+  )
+
+  return <ul>{filtered.map(a => <li key={a.id}>{a.title}</li>)}</ul>
+}
+\`\`\`
+
+## useCallback
+
+\`\`\`typescript
+function SearchBar({ onSearch }: { onSearch: (q: string) => void }) {
+  // 不使用 useCallback：每次渲染创建新函数，导致子组件重新渲染
+  // const handleChange = (e) => onSearch(e.target.value)
+
+  // 使用 useCallback：函数引用稳定
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => onSearch(e.target.value),
+    [onSearch]
+  )
+
+  return <input onChange={handleChange} />
+}
+\`\`\`
+
+## 代码分割
+
+\`\`\`typescript
+import { lazy, Suspense } from 'react'
+
+// 懒加载组件
+const ArticleEditor = lazy(() => import('./ArticleEditor'))
+const CommentSection = lazy(() => import('./CommentSection'))
+
+function ArticlePage() {
+  return (
+    <div>
+      <ArticleHeader />
+      <Suspense fallback={<Skeleton />}>
+        <ArticleEditor />
+      </Suspense>
+      <Suspense fallback={<CommentSkeleton />}>
+        <CommentSection />
+      </Suspense>
+    </div>
+  )
+}
+\`\`\`
+
+## 虚拟滚动
+
+\`\`\`typescript
+import { useVirtualizer } from '@tanstack/react-virtual'
+
+function LongList({ items }: { items: Item[] }) {
+  const parentRef = useRef<HTMLDivElement>(null)
+
+  const virtualizer = useVirtualizer({
+    count: items.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 50,
+  })
+
+  return (
+    <div ref={parentRef} style={{ height: '400px', overflow: 'auto' }}>
+      <div style={{ height: virtualizer.getTotalSize() }}>
+        {virtualizer.getVirtualItems().map(virtualRow => (
+          <div
+            key={virtualRow.index}
+            style={{
+              position: 'absolute',
+              top: 0,
+              transform: \`translateY(\${virtualRow.start}px)\`,
+              height: \`\${virtualRow.size}px\`,
+            }}
+          >
+            {items[virtualRow.index].name}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+\`\`\`
+
+## 性能分析工具
+
+1. **React DevTools Profiler**：记录和分析组件渲染时间
+2. **Lighthouse**：评估页面性能得分
+3. **Web Vitals**：监控 LCP、FID、CLS 等核心指标
+
+> 性能优化的核心原则：不要过早优化，先测量再优化。`,
+      categoryId: techCategory.id,
+      status: 'PUBLISHED' as const,
+      likes: 35,
+      views: 205,
+      publishedAt: new Date('2026-05-18'),
+      tagSlugs: ['react', 'typescript', 'framer-motion'],
+    },
   ]
 
   // 导入文章

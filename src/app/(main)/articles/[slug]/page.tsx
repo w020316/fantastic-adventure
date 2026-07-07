@@ -11,7 +11,6 @@ import { categoryColorMap, categoryGradients, formatDate, getReadingTime } from 
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
-import rehypeHighlight from 'rehype-highlight'
 
 function ReadingProgressBar() {
   const [progress, setProgress] = useState(0)
@@ -699,7 +698,7 @@ export default function ArticleDetailPage() {
               <div className="prose-cyber">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
-                  rehypePlugins={[rehypeSlug, rehypeHighlight]}
+                  rehypePlugins={[rehypeSlug]}
                 >
                   {article.content}
                 </ReactMarkdown>
