@@ -8,11 +8,22 @@ export const SITE_CONFIG = {
   authorNameCn: '周末',
   authorNameEn: 'Cris',
   // 版本号：每次发版递增，用户首次访问新版本时弹窗提示更新内容
-  version: '1.4.0',
+  version: '1.5.0',
 }
 
 // 版本更新日志（最新版本放最前）
 export const CHANGELOG: { version: string; date: string; items: string[] }[] = [
+  {
+    version: '1.5.0',
+    date: '2026-07-07',
+    items: [
+      '文章系统新增 4 个方向分类：前端 / Java后端 / 全栈 / AI项目，支持分类筛选',
+      '新增 11 篇项目介绍文章，覆盖所有项目（CyberBlog、教材ING、心语日记、YOLO 等）',
+      '影像长廊扩充：上下两排各新增 6 张照片，涵盖项目界面与生活灵感',
+      '修复文章详情页空白问题：优化数据库连接池配置，新增请求重试机制',
+      '文章 excerpt 加长至 280-430 字，内容更详尽',
+    ],
+  },
   {
     version: '1.4.0',
     date: '2026-07-01',
