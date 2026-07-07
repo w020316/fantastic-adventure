@@ -1,11 +1,51 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import SectionReveal from '@/components/ui/SectionReveal'
+
+interface Stats {
+  projectCount: number
+  deployedCount: number
+  articleCount: number
+}
 
 /**
  * About 区块 - 个人定位与理念
+ * 统计数据从数据库实时更新
  */
 export default function AboutSection() {
+  const [stats, setStats] = useState<Stats>({ projectCount: 0, deployedCount: 0, articleCount: 0 })
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let cancelled = false
+    async function fetchStats() {
+      try {
+        const res = await fetch('/api/stats', { cache: 'no-store' })
+        if (!res.ok) throw new Error('Failed to fetch stats')
+        const data = await res.json()
+        if (!cancelled) {
+          setStats({
+            projectCount: data.projectCount ?? 0,
+            deployedCount: data.deployedCount ?? 0,
+            articleCount: data.articleCount ?? 0,
+          })
+          setLoading(false)
+        }
+      } catch {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    fetchStats()
+
+    // 每 5 分钟自动刷新
+    const timer = setInterval(fetchStats, 5 * 60 * 1000)
+    return () => {
+      cancelled = true
+      clearInterval(timer)
+    }
+  }, [])
+
   return (
     <section id="about" className="relative py-24 sm:py-32 px-4">
       <div className="max-w-5xl mx-auto">
@@ -35,19 +75,28 @@ export default function AboutSection() {
             </p>
           </SectionReveal>
 
-          {/* 右侧 - 关键数据 */}
+          {/* 右侧 - 关键数据（实时更新） */}
           <SectionReveal className="md:col-span-5" delay={200}>
             <div className="grid grid-cols-2 gap-4">
               <div className="cyber-card p-5">
-                <p className="font-display text-3xl font-bold text-[#ccff00]">8+</p>
+                <p className="font-display text-3xl font-bold text-[#ccff00]">
+                  {loading ? '...' : stats.projectCount}
+                  {!loading && stats.projectCount > 0 && '+'}
+                </p>
                 <p className="mt-1 text-xs text-[#888]">独立项目</p>
               </div>
               <div className="cyber-card p-5">
-                <p className="font-display text-3xl font-bold text-[#ccff00]">4+</p>
-                <p className="mt-1 text-xs text-[#888]">技术栈</p>
+                <p className="font-display text-3xl font-bold text-[#ccff00]">
+                  {loading ? '...' : stats.articleCount}
+                  {!loading && stats.articleCount > 0 && '+'}
+                </p>
+                <p className="mt-1 text-xs text-[#888]">技术文章</p>
               </div>
               <div className="cyber-card p-5">
-                <p className="font-display text-3xl font-bold text-[#ccff00]">3+</p>
+                <p className="font-display text-3xl font-bold text-[#ccff00]">
+                  {loading ? '...' : stats.deployedCount}
+                  {!loading && stats.deployedCount > 0 && '+'}
+                </p>
                 <p className="mt-1 text-xs text-[#888]">上线部署</p>
               </div>
               <div className="cyber-card p-5">

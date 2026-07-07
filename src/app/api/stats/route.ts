@@ -62,14 +62,16 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
-    const [totalViews, todayViews, articleCount, commentCount] = await Promise.all([
+    const [totalViews, todayViews, articleCount, commentCount, projectCount, deployedCount] = await Promise.all([
       prisma.siteStats.count(),
       prisma.siteStats.count({ where: { createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) } } }),
       prisma.article.count({ where: { status: 'PUBLISHED' } }),
       prisma.comment.count({ where: { status: 'APPROVED' } }),
+      prisma.project.count(),
+      prisma.project.count({ where: { demoUrl: { not: null } } }),
     ])
 
-    return NextResponse.json({ totalViews, todayViews, articleCount, commentCount })
+    return NextResponse.json({ totalViews, todayViews, articleCount, commentCount, projectCount, deployedCount })
   } catch (error) {
     console.error('GET /api/stats error:', error)
     return NextResponse.json({ error: '获取统计失败' }, { status: 500 })
