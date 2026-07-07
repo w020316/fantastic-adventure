@@ -49,7 +49,7 @@ export default function AdminLoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               className="cyber-input text-sm"
               style={{ paddingLeft: '1rem' }}
-              placeholder="admin@xiaowu.dev"
+              placeholder="admin@cyberblog.dev"
               required
             />
           </div>
