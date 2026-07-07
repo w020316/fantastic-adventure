@@ -1,14 +1,40 @@
 const BASE = ''
 
+// 带重试的 fetch，应对偶发的数据库连接池超时（P2024）
+async function fetchWithRetry(url: string, options?: RequestInit, maxRetries = 2): Promise<Response> {
+  let lastError: unknown
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        ...options,
+        cache: 'no-store',
+      })
+      // 5xx 错误才重试，4xx 不重试（如 404）
+      if (res.status >= 500 && attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, 300 * (attempt + 1)))
+        continue
+      }
+      return res
+    } catch (error) {
+      lastError = error
+      if (attempt < maxRetries) {
+        await new Promise((r) => setTimeout(r, 300 * (attempt + 1)))
+        continue
+      }
+    }
+  }
+  throw lastError instanceof Error ? lastError : new Error('请求失败')
+}
+
 export async function fetchArticles(params?: Record<string, string>) {
   const qs = params ? '?' + new URLSearchParams(params).toString() : ''
-  const res = await fetch(`${BASE}/api/articles${qs}`, { cache: 'no-store' })
+  const res = await fetchWithRetry(`${BASE}/api/articles${qs}`)
   if (!res.ok) throw new Error('获取文章失败')
   return res.json()
 }
 
 export async function fetchArticle(id: string) {
-  const res = await fetch(`${BASE}/api/articles/${id}`, { cache: 'no-store' })
+  const res = await fetchWithRetry(`${BASE}/api/articles/${id}`)
   if (!res.ok) throw new Error('获取文章失败')
   return res.json()
 }
