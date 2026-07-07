@@ -28,21 +28,24 @@ interface ProjectData {
 }
 
 // 项目分类推断（与 ProjectsClient 保持一致）
-type ProjectCategory = '全栈' | '前端' | 'AI 应用' | '计算机视觉' | 'Java Web'
+type ProjectCategory = '前端' | 'Java后端' | '全栈' | 'AI项目'
 
 const CATEGORY_CONFIG: Record<ProjectCategory, { color: string; bg: string; border: string }> = {
-  '全栈': { color: '#00ff9f', bg: 'rgba(0,255,159,0.1)', border: 'rgba(0,255,159,0.4)' },
   '前端': { color: '#00d4ff', bg: 'rgba(0,212,255,0.1)', border: 'rgba(0,212,255,0.4)' },
-  'AI 应用': { color: '#ff0080', bg: 'rgba(255,0,128,0.1)', border: 'rgba(255,0,128,0.4)' },
-  '计算机视觉': { color: '#ffe600', bg: 'rgba(255,230,0,0.1)', border: 'rgba(255,230,0,0.4)' },
-  'Java Web': { color: '#ff8c00', bg: 'rgba(255,140,0,0.1)', border: 'rgba(255,140,0,0.4)' },
+  'Java后端': { color: '#ff8c00', bg: 'rgba(255,140,0,0.1)', border: 'rgba(255,140,0,0.4)' },
+  '全栈': { color: '#00ff9f', bg: 'rgba(0,255,159,0.1)', border: 'rgba(0,255,159,0.4)' },
+  'AI项目': { color: '#ff0080', bg: 'rgba(255,0,128,0.1)', border: 'rgba(255,0,128,0.4)' },
 }
 
 function inferCategory(techStack: string[]): ProjectCategory {
   const stack = techStack.join(' ').toLowerCase()
-  if (['yolo', 'opencv', 'pytorch', 'tensorflow'].some((k) => stack.includes(k))) return '计算机视觉'
-  if (['deepseek', 'chromadb', 'rag', 'llm', '智能体', 'agent'].some((k) => stack.includes(k))) return 'AI 应用'
-  if (['java', 'tomcat', 'jsp', 'maven', 'spring boot', 'springboot'].some((k) => stack.includes(k))) return 'Java Web'
+  // AI项目：含 CV / ML / LLM / RAG 等技术（计算机视觉归入此类）
+  if (['yolo', 'opencv', 'pytorch', 'tensorflow', 'deepseek', 'chromadb', 'rag', 'llm', '智能体', 'agent'].some((k) => stack.includes(k))) return 'AI项目'
+  // Java后端：精确匹配 java 关键词（避免 JavaScript 误判）+ Java Web 技术栈
+  const hasJava = techStack.some((t) => /^java$/i.test(t.trim()))
+  const hasJavaWeb = ['tomcat', 'jsp', 'maven', 'spring boot', 'springboot'].some((k) => stack.includes(k))
+  if (hasJava || hasJavaWeb) return 'Java后端'
+  // 全栈：同时含前端框架 + 后端技术
   const hasFrontend = ['vue', 'react', 'next.js', 'nextjs'].some((k) => stack.includes(k))
   const hasBackend = ['prisma', 'serverless', 'postgresql', 'node.js', 'nodejs', 'express', 'koa', 'mysql'].some((k) => stack.includes(k))
   if (hasFrontend && hasBackend) return '全栈'
