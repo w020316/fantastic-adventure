@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import SectionReveal from '@/components/ui/SectionReveal'
 
 interface Repo {
@@ -16,6 +16,7 @@ interface Repo {
   forksCount: number
   topics: string[]
   updatedAt: string
+  difficulty?: number
 }
 
 // 语言颜色映射
@@ -30,6 +31,15 @@ const languageColors: Record<string, string> = {
   'C++': '#f34b7d',
   Java: '#b07219',
   Other: '#888888',
+}
+
+// 难度等级标签
+const difficultyLabels: Record<number, { label: string; color: string }> = {
+  5: { label: '★★★★★', color: '#ff0080' },
+  4: { label: '★★★★', color: '#ff8c00' },
+  3: { label: '★★★', color: '#ffe600' },
+  2: { label: '★★', color: '#00d4ff' },
+  1: { label: '★', color: '#888888' },
 }
 
 // GitHub 用户名（用于推断 Pages URL）
@@ -61,30 +71,51 @@ export default function GitHubReposSection() {
   const [repos, setRepos] = useState<Repo[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<string>('')
+  const [refreshing, setRefreshing] = useState(false)
+  // 用于避免并发请求
+  const fetchingRef = useRef(false)
 
-  useEffect(() => {
-    let cancelled = false
-    async function fetchRepos() {
-      try {
-        const res = await fetch('/api/github', { cache: 'no-store' })
-        if (!res.ok) throw new Error('Failed to fetch')
-        const data = await res.json()
-        if (!cancelled) {
-          setRepos(data.repos?.slice(0, 6) ?? [])
-          setLoading(false)
-        }
-      } catch {
-        if (!cancelled) {
-          setError(true)
-          setLoading(false)
-        }
-      }
-    }
-    fetchRepos()
-    return () => {
-      cancelled = true
+  const fetchRepos = useCallback(async (silent = false) => {
+    if (fetchingRef.current) return
+    fetchingRef.current = true
+    if (silent) setRefreshing(true)
+    try {
+      const res = await fetch('/api/github', { cache: 'no-store' })
+      if (!res.ok) throw new Error('Failed to fetch')
+      const data = await res.json()
+      // 后端已按难度从高到低排序，取前 6 个
+      setRepos(data.repos?.slice(0, 6) ?? [])
+      setLastUpdated(data.updatedAt ?? new Date().toISOString())
+      setError(false)
+    } catch {
+      if (!silent) setError(true)
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
+      fetchingRef.current = false
     }
   }, [])
+
+  useEffect(() => {
+    fetchRepos()
+
+    // 实时更新机制：每 5 分钟自动刷新一次（与后端缓存周期对齐）
+    const refreshTimer = setInterval(() => fetchRepos(true), 5 * 60 * 1000)
+
+    // 页面从后台切回前台时立即刷新
+    function onVisibilityChange() {
+      if (document.visibilityState === 'visible') {
+        fetchRepos(true)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      clearInterval(refreshTimer)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [fetchRepos])
 
   // 加载中或出错时不显示该区块
   if (loading || error || repos.length === 0) return null
@@ -93,35 +124,69 @@ export default function GitHubReposSection() {
     <section className="relative py-24 sm:py-32 px-4">
       <div className="max-w-6xl mx-auto">
         <SectionReveal>
-          <p className="section-label">
-            <span className="text-[#ccff00]">04</span>
-            OPEN SOURCE
-          </p>
-          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-            GitHub 开源
-          </h2>
-          <p className="text-sm text-[#888] mb-12 max-w-lg">
-            实时同步我的 GitHub 仓库，点击直接访问源码或在线体验。
-          </p>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <p className="section-label">
+                <span className="text-[#ccff00]">04</span>
+                OPEN SOURCE
+              </p>
+              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+                GitHub 开源
+              </h2>
+              <p className="text-sm text-[#888] mb-12 max-w-lg">
+                实时同步我的 GitHub 仓库，按技术难度从高到低排列，点击直接访问源码或在线体验。
+              </p>
+            </div>
+            {/* 实时更新指示器 */}
+            <button
+              onClick={() => fetchRepos(true)}
+              disabled={refreshing}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#222] text-[10px] font-mono text-[#666] hover:border-[#ccff00]/50 hover:text-[#ccff00] transition-all rounded-full disabled:opacity-50"
+              aria-label="刷新仓库列表"
+              title={lastUpdated ? `最后更新：${new Date(lastUpdated).toLocaleString('zh-CN')}` : '刷新'}
+            >
+              <svg
+                className={`w-3 h-3 ${refreshing ? 'animate-spin' : ''}`}
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0h-4.018m4.018 0a8.001 8.001 0 01-15.357-2" />
+              </svg>
+              {refreshing ? '同步中...' : '刷新'}
+            </button>
+          </div>
         </SectionReveal>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {repos.map((repo, i) => {
             const { url: demoUrl, hasDemo } = resolveDemoUrl(repo)
+            const diff = repo.difficulty ?? 2
+            const diffInfo = difficultyLabels[diff] ?? difficultyLabels[2]
             return (
               <SectionReveal key={repo.id} delay={i * 60}>
                 <div className="cyber-card p-5 h-full flex flex-col hover:border-[#ccff00]/50 transition-all duration-300 group">
-                  {/* 仓库名 */}
+                  {/* 仓库名 + 难度 */}
                   <div className="flex items-start justify-between mb-2">
                     <h3 className="font-display text-base font-bold text-white group-hover:text-[#ccff00] transition-colors truncate">
                       {repo.name}
                     </h3>
-                    {hasDemo && (
-                      <span className="inline-flex items-center gap-1 text-[9px] font-mono text-[#ccff00] flex-shrink-0 ml-2 px-1.5 py-0.5 border border-[#ccff00]/30 rounded-full bg-[#ccff00]/5">
-                        <span className="w-1 h-1 bg-[#ccff00] rounded-full animate-pulse" />
-                        LIVE
+                    <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                      {/* 难度标签 */}
+                      <span
+                        className="text-[9px] font-mono px-1.5 py-0.5 border rounded-full"
+                        style={{ borderColor: diffInfo.color + '60', color: diffInfo.color, background: diffInfo.color + '12' }}
+                        title={`技术难度 ${diff}/5`}
+                      >
+                        {diffInfo.label}
                       </span>
-                    )}
+                      {hasDemo && (
+                        <span className="inline-flex items-center gap-1 text-[9px] font-mono text-[#ccff00] px-1.5 py-0.5 border border-[#ccff00]/30 rounded-full bg-[#ccff00]/5">
+                          <span className="w-1 h-1 bg-[#ccff00] rounded-full animate-pulse" />
+                          LIVE
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   {/* 描述 */}

@@ -92,7 +92,7 @@ export default function ArticlesSection({ articles }: ArticlesSectionProps) {
       <div className="max-w-5xl mx-auto">
         <SectionReveal>
           <p className="section-label">
-            <span className="text-[#ccff00]">04</span>
+            <span className="text-[#ccff00]">05</span>
             ARTICLES
           </p>
           <div className="flex items-end justify-between mb-12">

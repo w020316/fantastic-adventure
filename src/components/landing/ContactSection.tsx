@@ -91,7 +91,7 @@ export default function ContactSection() {
 
             <div className="relative z-10">
               <p className="font-mono text-xs tracking-[0.2em] text-[#0a0a0a]/60 uppercase mb-3">
-                05 · CONTACT
+                07 · CONTACT
               </p>
               <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-[#0a0a0a] mb-4">
                 有想法？聊聊吧

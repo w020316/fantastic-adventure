@@ -163,6 +163,10 @@ export default function PhotoStripSection() {
   const [reduceMotion, setReduceMotion] = useState(false)
   // 自动滚动：悬停或灯箱打开时暂停
   const [paused, setPaused] = useState(false)
+  // 播放速度（毫秒间隔）：慢/正常/快
+  const [speed, setSpeed] = useState<'slow' | 'normal' | 'fast'>('normal')
+
+  const speedInterval = speed === 'slow' ? 5000 : speed === 'fast' ? 1500 : 3000
 
   useEffect(() => {
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)')
@@ -184,7 +188,6 @@ export default function PhotoStripSection() {
   useEffect(() => {
     if (reduceMotion || paused || lightbox !== null) return
     const STEP = 380 // 单张卡片宽度 + gap
-    const INTERVAL = 3000 // 每 3 秒滚动一张
 
     const timer = setInterval(() => {
       // 上排：向右滚动，到末尾回到开头
@@ -204,17 +207,16 @@ export default function PhotoStripSection() {
       if (bottom) {
         const maxScroll = bottom.scrollWidth - bottom.clientWidth
         if (maxScroll <= 0) return
-        const next = bottom.scrollLeft - STEP
         if (bottom.scrollLeft <= 0) {
           bottom.scrollTo({ left: maxScroll, behavior: 'smooth' })
         } else {
           bottom.scrollBy({ left: -STEP, behavior: 'smooth' })
         }
       }
-    }, INTERVAL)
+    }, speedInterval)
 
     return () => clearInterval(timer)
-  }, [reduceMotion, paused, lightbox])
+  }, [reduceMotion, paused, lightbox, speedInterval])
 
   // 灯箱键盘导航
   const allPhotos = [
@@ -268,16 +270,71 @@ export default function PhotoStripSection() {
 
       <div className="max-w-6xl mx-auto relative">
         <SectionReveal>
-          <p className="section-label">
-            <span className="text-[#ccff00]">06</span>
-            PHOTOS
-          </p>
-          <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
-            影像 <span className="text-[#ccff00]">长廊</span>
-          </h2>
-          <p className="text-sm text-[#888] mb-12 max-w-lg">
-            上下两排照片自动滚动浏览，鼠标悬停暂停，点击左右按钮手动转动，点击图片可放大查看。
-          </p>
+          <div className="flex items-end justify-between flex-wrap gap-4 mb-12">
+            <div>
+              <p className="section-label">
+                <span className="text-[#ccff00]">06</span>
+                PHOTOS
+              </p>
+              <h2 className="font-display text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
+                影像 <span className="text-[#ccff00]">长廊</span>
+              </h2>
+              <p className="text-sm text-[#888] max-w-lg">
+                上下两排照片自动滚动浏览，鼠标悬停暂停，点击图片可放大查看。
+              </p>
+            </div>
+
+            {/* 播放控制 */}
+            {!reduceMotion && (
+              <div className="flex items-center gap-3">
+                {/* 播放/暂停 */}
+                <button
+                  onClick={() => setPaused((p) => !p)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-[#222] text-[10px] font-mono text-[#888] hover:border-[#ccff00]/50 hover:text-[#ccff00] transition-all rounded-full"
+                  aria-label={paused ? '播放自动滚动' : '暂停自动滚动'}
+                  title={paused ? '播放' : '暂停'}
+                >
+                  {paused ? (
+                    <>
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z" />
+                      </svg>
+                      播放
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M6 4h4v16H6zM14 4h4v16h-4z" />
+                      </svg>
+                      暂停
+                    </>
+                  )}
+                </button>
+
+                {/* 速度控制 */}
+                <div className="flex items-center gap-1">
+                  <span className="font-mono text-[10px] text-[#444] tracking-widest">SPEED:</span>
+                  {([
+                    { key: 'slow', label: '慢' },
+                    { key: 'normal', label: '正常' },
+                    { key: 'fast', label: '快' },
+                  ] as const).map((opt) => (
+                    <button
+                      key={opt.key}
+                      onClick={() => setSpeed(opt.key)}
+                      className={`px-2 py-1 text-[10px] font-mono rounded transition-all ${
+                        speed === opt.key
+                          ? 'text-[#ccff00] border border-[#ccff00]/40 bg-[#ccff00]/5'
+                          : 'text-[#666] border border-transparent hover:text-[#888]'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
         </SectionReveal>
 
         {/* 上排照片（正向滚动） */}
