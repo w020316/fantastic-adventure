@@ -52,6 +52,42 @@ const TOP_ROW: PhotoItem[] = [
     desc: '项目监控',
     size: 'landscape_4_3',
   },
+  {
+    prompt: 'cyberpunk blog website homepage on dark monitor, green neon accents, article cards, modern UI',
+    title: '博客前台',
+    desc: 'CyberBlog 界面',
+    size: 'landscape_4_3',
+  },
+  {
+    prompt: 'cyberpunk admin dashboard CMS panel, dark theme, neon green pink highlights, data tables',
+    title: 'CMS 后台',
+    desc: '内容管理系统',
+    size: 'landscape_4_3',
+  },
+  {
+    prompt: 'YOLO object detection interface, bounding boxes on food safety video, green UI overlay',
+    title: 'YOLO 检测',
+    desc: '食品安全识别',
+    size: 'landscape_4_3',
+  },
+  {
+    prompt: 'Vue 3 campus textbook search platform interface, dark mode, modern cards, green accents',
+    title: '教材ING',
+    desc: '校园信息平台',
+    size: 'landscape_4_3',
+  },
+  {
+    prompt: 'AI diary app interface, emotion detection chart, chat bubbles, dark UI, neon glow',
+    title: '心语日记',
+    desc: '多智能体日记',
+    size: 'landscape_4_3',
+  },
+  {
+    prompt: 'pixel art generator tool UI, colorful pixel grid on dark background, creative design',
+    title: 'PixelForge',
+    desc: '像素艺术生成',
+    size: 'landscape_4_3',
+  },
 ]
 
 // 下排照片（生活与灵感）
@@ -90,6 +126,42 @@ const BOTTOM_ROW: PhotoItem[] = [
     prompt: 'abstract 3D render of geometric shapes with neon green edges on black background',
     title: '几何美学',
     desc: '设计灵感',
+    size: 'landscape_4_3',
+  },
+  {
+    prompt: 'books and plants on wooden desk near window, warm afternoon sunlight, cozy study corner',
+    title: '阅读角落',
+    desc: '静谧时光',
+    size: 'landscape_4_3',
+  },
+  {
+    prompt: 'misty mountain landscape at sunrise, golden light, peaceful nature scenery',
+    title: '山间晨光',
+    desc: '远行治愈',
+    size: 'landscape_4_3',
+  },
+  {
+    prompt: 'plate of gourmet food on dark slate table, restaurant plating, top down view',
+    title: '美食记录',
+    desc: '生活滋味',
+    size: 'landscape_4_3',
+  },
+  {
+    prompt: 'vintage film camera on wooden table, warm light leaks, analog photography aesthetic',
+    title: '胶片时光',
+    desc: '记录生活',
+    size: 'landscape_4_3',
+  },
+  {
+    prompt: 'cozy bedroom with warm lamp light at night, book on bed, peaceful atmosphere',
+    title: '深夜独处',
+    desc: '属于自己的时刻',
+    size: 'landscape_4_3',
+  },
+  {
+    prompt: 'open laptop on cafe table near window, coffee cup, soft natural light, productive afternoon',
+    title: '咖啡馆办公',
+    desc: '换个环境',
     size: 'landscape_4_3',
   },
 ]
