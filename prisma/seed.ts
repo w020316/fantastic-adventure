@@ -336,6 +336,23 @@ async function main() {
       featured: true,
       order: 3,
     },
+    {
+      title: 'AI 智能法律助手',
+      subtitle: 'lawai · Spring Boot + Vue 全栈 AI 法律咨询系统',
+      description: '基于 Spring Boot + Vue 3 的 AI 智能法律咨询系统，集成大语言模型提供专业法律问答、案例检索、法律条文解读。支持多轮对话、会话管理、SSE 流式响应、按时间分组浏览，配套 PostgreSQL 持久化与 Docker 容器化部署，GitHub Actions 自动构建镜像推送 ghcr.io。',
+      impact: '将 AI 大模型能力与垂直领域法律知识结合，从需求分析、架构设计到云端部署的完整全栈 AI 应用实践',
+      metrics: [
+        { label: '对话轮次', value: 30, suffix: '+' },
+        { label: '技术栈', value: 0, display: 'Spring+Vue' },
+        { label: '部署', value: 0, display: 'Fly.io' },
+      ],
+      demoUrl: 'https://lawai-frontend.fly.dev/chat',
+      repoUrl: 'https://github.com/w020316/ai-legal-assistant',
+      caseStudyUrl: null,
+      techStack: ['Java', 'Spring Boot', 'Vue 3', 'TypeScript', 'PostgreSQL', 'Docker', 'GitHub Actions', 'LLM', 'SSE'],
+      featured: true,
+      order: 4,
+    },
   ]
   // 为每个项目生成 URL 友好的英文 id（中文标题用拼音/英文别名映射）
   const projectIdMap: Record<string, string> = {
@@ -343,6 +360,7 @@ async function main() {
     'YOLO 食品安全检测系统': 'yolo-food-safety',
     '情侣日记': 'couple-diary',
     '教材ING智能教材查询与管理平台': 'textbook-ing',
+    'AI 智能法律助手': 'ai-legal-assistant',
   }
   for (const p of projectsData) {
     const id = projectIdMap[p.title] || p.title.toLowerCase()
