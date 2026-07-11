@@ -215,7 +215,7 @@ async function main() {
 
 ### 2. 工程化深度实践
 
-- 经历 41 次迭代提交的情侣日记应用（CI/CD 全自动化）
+- 经历 41 次迭代提交的治愈系心情记录应用（CI/CD 全自动化）
 - 解决海外服务器网易云 API 中文编码问题（X-Real-IP 方案）
 - 处理 Windows 文件系统权限导致的 Fly.io 构建失败（GitHub Actions Linux runner）
 
@@ -303,19 +303,19 @@ async function main() {
       order: 1,
     },
     {
-      title: '情侣日记',
-      subtitle: 'xiaoling-rij · Next.js 全栈情侣应用',
-      description: '基于 Next.js 的情侣日记应用，支持日记撰写、天气定位、AI 智能互动。含 Prisma 数据库、Vercel 部署、GitHub Actions 自动化 CI/CD，经历 41 次迭代提交。',
+      title: '心语日记',
+      subtitle: 'xiaoling-rij · Next.js 治愈系心情记录应用',
+      description: '基于 Next.js 的治愈系日常记录应用，支持日记撰写、心情打卡、待办管理、时光相册、AI 陪伴与健康追踪。含 Prisma 数据库、多主题切换、GitHub Pages 部署，经历 41 次迭代提交。',
       impact: '完整的全栈应用实践，从数据库设计到 CI/CD 自动化部署的端到端工程',
       metrics: [
         { label: '迭代次数', value: 41, suffix: '+' },
-        { label: '版本', value: 2, suffix: '.5' },
-        { label: '部署', value: 0, display: 'Vercel' },
+        { label: '版本', value: 2, suffix: '.4' },
+        { label: '部署', value: 0, display: 'Pages' },
       ],
-      demoUrl: 'https://xiaoling-rij.vercel.app',
+      demoUrl: 'https://w020316.github.io/xiaoling-rij/',
       repoUrl: 'https://github.com/w020316/xiaoling-rij',
       caseStudyUrl: null,
-      techStack: ['Next.js', 'TypeScript', 'Prisma', 'Vercel', 'GitHub Actions'],
+      techStack: ['Next.js', 'TypeScript', 'Prisma', 'GitHub Actions', 'PWA'],
       featured: true,
       order: 2,
     },
@@ -358,7 +358,7 @@ async function main() {
   const projectIdMap: Record<string, string> = {
     '个人数字品牌作品集': 'portfolio-site',
     'YOLO 食品安全检测系统': 'yolo-food-safety',
-    '情侣日记': 'couple-diary',
+    '心语日记': 'couple-diary',
     '教材ING智能教材查询与管理平台': 'textbook-ing',
     'AI 智能法律助手': 'ai-legal-assistant',
   }

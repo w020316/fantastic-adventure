@@ -103,16 +103,16 @@ const fallbackProjects: Project[] = [
   },
   {
     id: 'p3',
-    title: '情侣日记',
-    subtitle: 'xiaoling-rij · Next.js 全栈情侣应用',
-    description: '基于 Next.js 的情侣日记应用，支持日记撰写、天气定位、AI 智能互动。含 Prisma 数据库、Vercel 部署、GitHub Actions 自动化 CI/CD，经历 41 次迭代提交。',
+    title: '心语日记',
+    subtitle: 'xiaoling-rij · Next.js 治愈系心情记录应用',
+    description: '基于 Next.js 的治愈系日常记录应用，支持日记撰写、心情打卡、待办管理、时光相册、AI 陪伴与健康追踪。含 Prisma 数据库、多主题切换、GitHub Pages 部署，经历 41 次迭代提交。',
     metrics: [
       { label: '迭代次数', value: 41, suffix: '+' },
-      { label: '版本', value: 2, suffix: '.5' },
-      { label: '部署', value: 0, display: 'Vercel' },
+      { label: '版本', value: 2, suffix: '.4' },
+      { label: '部署', value: 0, display: 'Pages' },
     ],
-    techStack: ['Next.js', 'TypeScript', 'Prisma', 'Vercel', 'GitHub Actions'],
-    demoUrl: 'https://xiaoling-rij.vercel.app',
+    techStack: ['Next.js', 'TypeScript', 'Prisma', 'GitHub Actions', 'PWA'],
+    demoUrl: 'https://w020316.github.io/xiaoling-rij/',
     repoUrl: 'https://github.com/w020316/xiaoling-rij',
   },
 ]
