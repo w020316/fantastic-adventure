@@ -71,7 +71,10 @@ export async function GET() {
       prisma.project.count({ where: { demoUrl: { not: null } } }),
     ])
 
-    return NextResponse.json({ totalViews, todayViews, articleCount, commentCount, projectCount, deployedCount })
+    return NextResponse.json(
+      { totalViews, todayViews, articleCount, commentCount, projectCount, deployedCount },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' } }
+    )
   } catch (error) {
     console.error('GET /api/stats error:', error)
     return NextResponse.json({ error: '获取统计失败' }, { status: 500 })

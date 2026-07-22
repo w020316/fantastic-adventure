@@ -21,7 +21,8 @@ export default function AboutSection() {
     let cancelled = false
     async function fetchStats() {
       try {
-        const res = await fetch('/api/stats', { cache: 'no-store' })
+        // 5 分钟缓存，配合 Neon 休眠周期，减少数据库查询
+        const res = await fetch('/api/stats', { next: { revalidate: 300 } })
         if (!res.ok) throw new Error('Failed to fetch stats')
         const data = await res.json()
         if (!cancelled) {
@@ -38,12 +39,8 @@ export default function AboutSection() {
     }
     fetchStats()
 
-    // 每 5 分钟自动刷新
-    const timer = setInterval(fetchStats, 5 * 60 * 1000)
-    return () => {
-      cancelled = true
-      clearInterval(timer)
-    }
+    // 移除自动刷新：统计数据无需实时更新，减少数据库唤醒
+    return () => { cancelled = true }
   }, [])
 
   return (

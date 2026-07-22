@@ -11,8 +11,10 @@ import GitHubReposSection from '@/components/landing/GitHubReposSection'
 import PhotoStripSection from '@/components/landing/PhotoStripSection'
 import { prisma } from '@/lib/prisma'
 
-// 动态渲染，确保每次请求都获取最新数据
-export const dynamic = 'force-dynamic'
+// ISR 缓存：5 分钟重新验证一次，与 Neon 免费层 5 分钟休眠周期对齐
+// 缓存命中时不查数据库，让 Neon 有足够时间休眠以节省计算小时
+// 数据库不可用时返回旧缓存，不影响用户访问
+export const revalidate = 300
 
 // 数据库项目类型
 type DbProject = {

@@ -1,8 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import ProjectsClient from './ProjectsClient'
 
-// 运行时动态渲染，避免构建时需要 DATABASE_URL
-export const dynamic = 'force-dynamic'
+// ISR 缓存：5 分钟重新验证，减少数据库查询频率，配合 Neon 休眠
+export const revalidate = 300
 
 type ProjectMetric = {
   label?: string
