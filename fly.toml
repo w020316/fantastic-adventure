@@ -21,7 +21,7 @@ primary_region = "hkg"  # 香港节点，国内访问最快
 # 检查健康状态
 [[http_service.checks]]
   interval = "30s"
-  timeout = "10s"
-  grace_period = "60s"
+  timeout = "30s"
+  grace_period = "120s"
   method = "GET"
   path = "/"

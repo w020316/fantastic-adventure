@@ -17,8 +17,12 @@ function buildDatasourceUrl(): string | undefined {
     if (!url.searchParams.has('connection_limit')) {
       url.searchParams.set('connection_limit', process.env.DB_POOL_SIZE || '10')
     }
+    // 缩短超时：数据库不可达时快速失败，让首页 fallback 到静态数据（避免健康检查挂起）
     if (!url.searchParams.has('pool_timeout')) {
-      url.searchParams.set('pool_timeout', process.env.DB_POOL_TIMEOUT || '30')
+      url.searchParams.set('pool_timeout', process.env.DB_POOL_TIMEOUT || '3')
+    }
+    if (!url.searchParams.has('connect_timeout')) {
+      url.searchParams.set('connect_timeout', '3')
     }
     // pgbouncer 兼容模式（Neon pooler）
     if (url.hostname.includes('pooler') && !url.searchParams.has('pgbouncer')) {
