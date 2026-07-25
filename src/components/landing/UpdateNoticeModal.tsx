@@ -16,12 +16,14 @@ export default function UpdateNoticeModal() {
     try {
       const seenVersion = localStorage.getItem(STORAGE_KEY)
       const currentVersion = SITE_CONFIG.version
-      // 版本号不同 或 首次访问（无记录）时弹窗
-      if (seenVersion !== currentVersion) {
-        // 延迟 800ms 弹出，避免与首屏渲染冲突
-        const timer = setTimeout(() => setVisible(true), reduceMotion ? 0 : 800)
+      // 仅在「访问过旧版本」时弹窗：首次访问（无记录）静默写入版本号，不打扰新用户
+      if (seenVersion && seenVersion !== currentVersion) {
+        // 延迟 1.5s 弹出，确保首屏渲染完成、用户已浏览到内容后再提示
+        const timer = setTimeout(() => setVisible(true), reduceMotion ? 0 : 1500)
         return () => clearTimeout(timer)
       }
+      // 首次访问或版本一致：静默记录当前版本
+      localStorage.setItem(STORAGE_KEY, currentVersion)
     } catch {
       // localStorage 不可用时静默忽略
     }

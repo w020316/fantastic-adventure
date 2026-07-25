@@ -466,15 +466,37 @@ function MusicPanel() {
       >
         {/* 顶部进度条 */}
         {m.currentTrack && (
-          <div className="h-0.5 bg-[#1a1a1a] cursor-pointer" onClick={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect()
-            const pct = (e.clientX - rect.left) / rect.width
-            m.seek(pct * m.duration)
-          }}>
+          <div
+            className="h-0.5 bg-[#1a1a1a] cursor-pointer relative group/progress"
+            role="slider"
+            tabIndex={0}
+            aria-label="播放进度"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={m.duration > 0 ? Math.round((m.progress / m.duration) * 100) : 0}
+            onClick={(e) => {
+              const rect = e.currentTarget.getBoundingClientRect()
+              const pct = (e.clientX - rect.left) / rect.width
+              m.seek(pct * m.duration)
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault()
+                const step = 0.05 // 每次 5%
+                const current = m.duration > 0 ? m.progress / m.duration : 0
+                const next = e.key === 'ArrowRight'
+                  ? Math.min(1, current + step)
+                  : Math.max(0, current - step)
+                m.seek(next * m.duration)
+              }
+            }}
+          >
             <div
               className="h-full bg-gradient-to-r from-[#00ff9f] to-[#00d4ff] transition-[width]"
               style={{ width: `${m.duration > 0 ? (m.progress / m.duration) * 100 : 0}%` }}
             />
+            {/* 键盘聚焦时的可视提示 */}
+            <div className="absolute inset-0 ring-0 group-focus-within/progress:ring-2 group-focus-within/progress:ring-[#00ff9f]/40 pointer-events-none" />
           </div>
         )}
 
