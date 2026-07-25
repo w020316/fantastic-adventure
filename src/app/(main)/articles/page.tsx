@@ -80,6 +80,7 @@ function ArticlesContent() {
   const [totalArticles, setTotalArticles] = useState(0)
   const [articlesLoading, setArticlesLoading] = useState(true)
   const [sidebarLoading, setSidebarLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
 
   const debouncedSearch = useDebounce(searchQuery, 300)
 
@@ -92,17 +93,20 @@ function ArticlesContent() {
   }, [catParam])
 
   useEffect(() => {
-    fetchCategories().then((data) => {
-      setCategoriesList(data.categories)
-      setSidebarLoading(false)
-    })
-    fetchTags().then((data) => {
-      setTagsList(data.tags)
-    })
+    fetchCategories()
+      .then((data) => {
+        setCategoriesList(data.categories)
+        setSidebarLoading(false)
+      })
+      .catch(() => setSidebarLoading(false))
+    fetchTags()
+      .then((data) => setTagsList(data.tags))
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
     setArticlesLoading(true)
+    setFetchError(false)
     const params: Record<string, string> = {}
     if (debouncedSearch) params.search = debouncedSearch
     if (activeCategory !== 'all') params.category = activeCategory
@@ -114,6 +118,7 @@ function ArticlesContent() {
         setArticlesList(data.articles)
         setTotalArticles(data.pagination.total)
       })
+      .catch(() => setFetchError(true))
       .finally(() => setArticlesLoading(false))
   }, [debouncedSearch, activeCategory, activeTag, sortBy])
 
@@ -323,6 +328,18 @@ function ArticlesContent() {
                     </div>
                   </div>
                 ))
+              ) : fetchError ? (
+                <div className="cyber-card p-12 text-center">
+                  <span className="text-2xl block mb-3">📡</span>
+                  <p className="font-mono text-cyber-text-dim text-sm">数据库连接异常，稍后再试</p>
+                  <p className="font-mono text-cyber-text-dim text-xs mt-1">服务正在休眠恢复中，请刷新页面</p>
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="mt-4 px-4 py-2 text-xs font-mono border border-cyber-neon/30 text-cyber-neon rounded-sm hover:bg-cyber-neon/10 transition-all"
+                  >
+                    刷新重试
+                  </button>
+                </div>
               ) : articlesList.length > 0 ? (
                 articlesList.map((article, i) => (
                   <Link

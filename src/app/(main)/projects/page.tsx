@@ -12,9 +12,15 @@ type ProjectMetric = {
 }
 
 export default async function ProjectsPage() {
-  const projects = await prisma.project.findMany({
-    orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
-  })
+  // 数据库不可用时降级为空数组，ProjectsClient 会显示空状态，避免整页 500
+  let projects: Awaited<ReturnType<typeof prisma.project.findMany>> = []
+  try {
+    projects = await prisma.project.findMany({
+      orderBy: [{ order: 'asc' }, { createdAt: 'desc' }],
+    })
+  } catch {
+    // 数据库休眠或不可达时静默降级
+  }
 
   // 序列化为客户端兼容类型（Date → string）
   const serializedProjects = projects.map((p) => ({

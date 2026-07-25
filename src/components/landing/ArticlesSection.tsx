@@ -21,25 +21,25 @@ const fallbackArticles: ArticleItem[] = [
     slug: 'nextjs-16-features',
     title: 'Next.js 16 新特性深度解析',
     excerpt: '探索 Next.js 16 带来的革命性变化，包括 Turbopack 稳定版、改进的 App Router 和全新的服务端组件模式。',
-    date: '2026-05-15',
+    date: '2026-06-28',
     category: '技术',
-    readTime: '256 views',
+    readTime: '256 次阅读',
   },
   {
     slug: 'cyberpunk-ui-guide',
     title: '赛博朋克 UI 设计指南',
     excerpt: '从霓虹灯效到故障艺术，从玻璃拟态到扫描线，全面解析赛博朋克风格 UI 的设计原则与实现技巧。',
-    date: '2026-05-12',
+    date: '2026-06-20',
     category: '技术',
-    readTime: '189 views',
+    readTime: '189 次阅读',
   },
   {
     slug: 'my-2026-coding-journey',
     title: '我的 2026 编程之旅',
     excerpt: '从 Vue 到 React，从 Monorepo 到 Next.js 全栈，记录我在 2026 年的技术成长与思考。',
-    date: '2026-05-10',
+    date: '2026-06-15',
     category: '生活',
-    readTime: '134 views',
+    readTime: '134 次阅读',
   },
 ]
 
@@ -82,7 +82,7 @@ export default function ArticlesSection({ articles }: ArticlesSectionProps) {
       excerpt: a.excerpt ?? '',
       date: formatDate(a.publishedAt),
       category: a.category?.name ?? '未分类',
-      readTime: `${a.views} views`,
+      readTime: `${a.views} 次阅读`,
       coverImage: a.coverImage,
     }))
   }

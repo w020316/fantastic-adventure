@@ -9,38 +9,54 @@ interface Stats {
   articleCount: number
 }
 
+// 数据库不可达时的兜底数据（基于已上线项目的真实数量）
+const FALLBACK_STATS: Stats = { projectCount: 5, deployedCount: 4, articleCount: 3 }
+
 /**
  * About 区块 - 个人定位与理念
- * 统计数据从数据库实时更新
+ * 统计数据从数据库实时更新，数据库不可达时使用兜底数据
  */
 export default function AboutSection() {
-  const [stats, setStats] = useState<Stats>({ projectCount: 0, deployedCount: 0, articleCount: 0 })
+  const [stats, setStats] = useState<Stats>(FALLBACK_STATS)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let cancelled = false
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 3000)
+
     async function fetchStats() {
       try {
         // 5 分钟缓存，配合 Neon 休眠周期，减少数据库查询
-        const res = await fetch('/api/stats', { next: { revalidate: 300 } })
+        const res = await fetch('/api/stats', {
+          next: { revalidate: 300 },
+          signal: controller.signal,
+        })
         if (!res.ok) throw new Error('Failed to fetch stats')
         const data = await res.json()
         if (!cancelled) {
           setStats({
-            projectCount: data.projectCount ?? 0,
-            deployedCount: data.deployedCount ?? 0,
-            articleCount: data.articleCount ?? 0,
+            projectCount: data.projectCount ?? FALLBACK_STATS.projectCount,
+            deployedCount: data.deployedCount ?? FALLBACK_STATS.deployedCount,
+            articleCount: data.articleCount ?? FALLBACK_STATS.articleCount,
           })
           setLoading(false)
         }
       } catch {
-        if (!cancelled) setLoading(false)
+        // 数据库超时或不可达时使用兜底数据，避免首页显示 "..." 或 0
+        if (!cancelled) {
+          setStats(FALLBACK_STATS)
+          setLoading(false)
+        }
       }
     }
     fetchStats()
 
-    // 移除自动刷新：统计数据无需实时更新，减少数据库唤醒
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      clearTimeout(timeout)
+      controller.abort()
+    }
   }, [])
 
   return (
